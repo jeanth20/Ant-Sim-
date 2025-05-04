@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Hole Simulation - Performance Monitoring</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <div id="sidebar">
+    
+    <div id="ant-stats">
+      <h3>Colony Stats</h3>
+      <div id="ant-count">Ants: 10</div>
+      <div id="scout-count">Scouts: 6</div>
+      <div id="worker-count">Workers: 20</div>
+    </div>
+
+    <div id="ant-stats">
+      <h3>Food Items</h3>
+      <div class="food-item selected" data-type="apple" data-decay="5" data-ants="2">
+        <img src="/img/apple.svg" alt="Apple">
+        <div>
+          <span class="food-item-name">Apple</span>
+          <div class="food-item-props">Decay: 5s | Ants: 2</div>
+        </div>
+      </div>
+      <div class="food-item" data-type="bread" data-decay="30" data-ants="3">
+        <img src="/img/bread.svg" alt="Bread">
+        <div>
+          <span class="food-item-name">Bread</span>
+          <div class="food-item-props">Decay: 30s | Ants: 3</div>
+        </div>
+      </div>
+      <div class="food-item" data-type="cheese" data-decay="20" data-ants="4">
+        <img src="/img/cheese.svg" alt="Cheese">
+        <div>
+          <span class="food-item-name">Cheese</span>
+          <div class="food-item-props">Decay: 20s | Ants: 4</div>
+        </div>
+      </div>
+      <div class="food-item" data-type="sugar" data-decay="10" data-ants="1">
+        <img src="/img/sugar.svg" alt="Sugar">
+        <div>
+          <span class="food-item-name">Sugar</span>
+          <div class="food-item-props">Decay: 10s | Ants: 1</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="obstacles-section">
+      <h3>Obstacles</h3>
+      <div class="obstacle-item" data-type="rock">
+        <img src="/img/rock.svg" alt="Rock">
+        <span class="obstacle-item-name">Rock</span>
+      </div>
+      <div class="obstacle-item" data-type="stick">
+        <img src="/img/stick.svg" alt="Stick">
+        <span class="obstacle-item-name">Stick</span>
+      </div>
+      <div class="obstacle-item" data-type="leaf">
+        <img src="/img/leaf.svg" alt="Leaf">
+        <span class="obstacle-item-name">Leaf</span>
+      </div>
+    </div>
+
+    <div id="tools-section">
+      <h3>Tools</h3>
+      <div class="tool-item" data-type="magnifying-glass">
+        <img src="/img/magnifying-glass.svg" alt="Magnifying Glass">
+        <div>
+          <span class="tool-item-name">Magnifying Glass</span>
+          <div class="tool-item-desc">Hover over ants or predators to burn them</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-container">
+    <div id="score">Score: 0</div>
+    
+    <div id="game-controls">
+      <button class="game-button" id="save-button">Save Game</button>
+      <button class="game-button" id="load-button">Load Game</button>
+      <button class="game-button" id="reset-button">Reset Game</button>
+      <button class="game-button" id="settings-button">Performance</button>
+    </div>
+
+    <div id="settings-panel" style="display: none;">
+      <h3>Performance Settings</h3>
+      <div class="settings-row">
+        <label for="setting-cull">Cull Off-screen:</label>
+        <input type="checkbox" id="setting-cull" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-spatial">Spatial Partitioning:</label>
+        <input type="checkbox" id="setting-spatial" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-optimize">Optimize Rendering:</label>
+        <input type="checkbox" id="setting-optimize" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-frameskip">Frame Skipping:</label>
+        <input type="checkbox" id="setting-frameskip" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-simplified">Simplified Physics:</label>
+        <input type="checkbox" id="setting-simplified" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-quality">Graphics Quality:</label>
+        <select id="setting-quality">
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low" selected>Low</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label for="setting-target-fps">Target FPS:</label>
+        <select id="setting-target-fps">
+          <option value="60">60 FPS</option>
+          <option value="30">30 FPS</option>
+          <option value="15" selected>15 FPS</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label for="setting-antcount">Max Ants:</label>
+        <input type="range" id="setting-antcount" min="10" max="200" value="100">
+        <span id="antcount-value">100</span>
+      </div>
+      <div class="settings-row">
+        <label for="setting-draw-distance">Draw Distance:</label>
+        <input type="range" id="setting-draw-distance" min="50" max="300" value="150">
+        <span id="draw-distance-value">150</span>
+      </div>
+      <button class="game-button" id="close-settings">Close</button>
+      <button class="game-button" id="apply-settings">Apply</button>
+    </div>
+    <canvas id="antCanvas"></canvas>
+    <div id="magnifying-glass">
+      <img src="/img/magnifying-glass.svg" alt="Magnifying Glass">
+    </div>
+    <div id="performance-monitor">FPS: 0 | Ants: 0 | Food: 0 | Obstacles: 0</div>
+
+    <div id="environment-indicators">
+      <div class="environment-indicator" id="time-indicator">
+        <img src="/img/sun.svg" alt="Time" id="time-icon">
+        <span id="time-text">08:00</span>
+      </div>
+      <div class="environment-indicator" id="weather-indicator" style="display: none;">
+        <img src="/img/clear.svg" alt="Weather" id="weather-icon">
+        <span id="weather-text">Clear</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="tutorial-panel">
+    <h2>Welcome to Ant Simulation!</h2>
+    <p>This simulation allows you to observe and interact with a colony of ants as they gather food and navigate obstacles.</p>
+    <p><strong>Key Features:</strong></p>
+    <ul>
+      <li>Place different types of food for ants to collect</li>
+      <li>Add obstacles like rocks, sticks, and leaves</li>
+      <li>Use the magnifying glass to remove troublesome ants and predators</li>
+      <li>Experience day/night cycles and weather effects</li>
+      <li>Watch out for predators that will hunt your ants!</li>
+    </ul>
+    <p><strong>Tips:</strong></p>
+    <ul>
+      <li>Scout ants (yellow) find food and recruit worker ants</li>
+      <li>Worker ants (white) follow scouts and help carry food</li>
+      <li>Different terrains affect ant speed and food decay</li>
+      <li>Save your game progress using the Save button</li>
+    </ul>
+    <button id="tutorial-close">Got it!</button>
+  </div>
+
+  <!-- Load the main script -->
+  <script type="module" src="/static/js/main.js"></script>
+  
+  <!-- Load the performance monitor script -->
+  <script src="/static/js/performance-monitor.js"></script>
+  
+  <!-- Add a reset button for when the simulation freezes -->
+  <script>
+    window.addEventListener('load', function() {
+      // Create reset button
+      const resetButton = document.createElement('button');
+      resetButton.textContent = 'Emergency Reset';
+      resetButton.style.position = 'fixed';
+      resetButton.style.bottom = '10px';
+      resetButton.style.right = '120px';
+      resetButton.style.zIndex = '10000';
+      resetButton.style.padding = '5px 10px';
+      resetButton.style.backgroundColor = '#D32F2F';
+      resetButton.style.color = '#fff';
+      resetButton.style.border = 'none';
+      resetButton.style.borderRadius = '3px';
+      resetButton.style.cursor = 'pointer';
+      
+      // Add click event
+      resetButton.addEventListener('click', function() {
+        // Try to reset the game
+        if (typeof window.resetGame === 'function') {
+          window.resetGame();
+        } else {
+          // Manual reset
+          if (window.ants) window.ants.length = 0;
+          if (window.food) window.food.length = 0;
+          if (window.obstacles) window.obstacles.length = 0;
+          
+          // Try to initialize ants
+          if (typeof window.initializeAnts === 'function') {
+            window.initializeAnts();
+          }
+          
+          // Reload the page as a last resort
+          if (confirm('Reset failed. Reload the page?')) {
+            window.location.reload();
+          }
+        }
+      });
+      
+      // Add to document
+      document.body.appendChild(resetButton);
+      
+      // Add watchdog timer to detect freezes
+      let lastFrameTime = performance.now();
+      
+      // Update last frame time in animation loop
+      const originalRequestAnimationFrame = window.requestAnimationFrame;
+      window.requestAnimationFrame = function(callback) {
+        return originalRequestAnimationFrame(function(timestamp) {
+          lastFrameTime = performance.now();
+          callback(timestamp);
+        });
+      };
+      
+      // Check for freezes every second
+      setInterval(() => {
+        const now = performance.now();
+        const timeSinceLastFrame = now - lastFrameTime;
+        
+        // If more than 5 seconds have passed since the last frame, the simulation might be frozen
+        if (timeSinceLastFrame > 5000) {
+          console.error(`Possible freeze detected: ${(timeSinceLastFrame / 1000).toFixed(1)} seconds since last frame`);
+          
+          // Try to recover by reducing complexity
+          if (window.ants && window.ants.length > 20) {
+            console.log(`Attempting recovery: Reducing ant count from ${window.ants.length} to 20`);
+            window.ants.length = 20;
+            
+            // Update counts if they exist
+            if (window.scoutCount !== undefined && window.workerCount !== undefined) {
+              window.scoutCount = window.ants.filter(a => a.type === 'scout').length;
+              window.workerCount = window.ants.filter(a => a.type === 'worker').length;
+            }
+            
+            // Try to update stats if the function exists
+            if (typeof window.updateStats === 'function') {
+              try {
+                window.updateStats();
+              } catch (e) {
+                console.error('Error updating stats:', e);
+              }
+            }
+            
+            alert('Simulation was frozen. Reduced ant count to recover.');
+          }
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

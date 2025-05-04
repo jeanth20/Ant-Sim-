@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Hole Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      background: #ffffff;
+      overflow: hidden;
+      font-family: sans-serif;
+      color: rgb(233, 0, 0);
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #bb9999;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 20px;
+      transition: background 0.3s;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: 0</div>
+  <canvas id="antCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('antCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const ants = [];
+    const food = [];
+    const queen = { x: canvas.width / 2, y: canvas.height - 50 };
+    let score = 0;
+
+    class Ant {
+      constructor() {
+        this.x = queen.x + Math.random() * 50 - 25;
+        this.y = queen.y + Math.random() * 50 - 25;
+        this.speed = 1.2;
+        this.target = null;
+        this.carrying = false;
+      }
+
+      update() {
+        if (!this.carrying) {
+          // Look for nearest food
+          if (!this.target || !food.includes(this.target)) {
+            this.target = food.sort((a, b) => this.distance(a) - this.distance(b))[0];
+          }
+          if (this.target) {
+            this.moveToward(this.target);
+            if (this.distance(this.target) < 5) {
+              this.carrying = true;
+              food.splice(food.indexOf(this.target), 1);
+              this.target = { x: queen.x, y: queen.y };
+            }
+          } else {
+            this.wander();
+          }
+        } else {
+          this.moveToward(this.target);
+          if (this.distance(this.target) < 5) {
+            score++;
+            flashScore('green');
+            this.carrying = false;
+            this.target = null;
+          }
+        }
+      }
+
+      moveToward(target) {
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const dist = Math.hypot(dx, dy);
+        this.x += (dx / dist) * this.speed;
+        this.y += (dy / dist) * this.speed;
+      }
+
+      wander() {
+        this.x += Math.random() * 2 - 1;
+        this.y += Math.random() * 2 - 1;
+      }
+
+      distance(obj) {
+        return Math.hypot(this.x - obj.x, this.y - obj.y);
+      }
+
+      draw() {
+        ctx.fillStyle = this.carrying ? '#f0f' : '#fff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function flashScore(color) {
+      scoreDisplay.style.background = color;
+      scoreDisplay.textContent = `Score: ${score}`;
+      setTimeout(() => {
+        scoreDisplay.style.background = '#222';
+      }, 200);
+    }
+
+    for (let i = 0; i < 30; i++) ants.push(new Ant());
+
+    canvas.addEventListener('click', (e) => {
+      food.push({ x: e.clientX, y: e.clientY });
+    });
+
+    function drawQueen() {
+      ctx.fillStyle = '#0f0';
+      ctx.beginPath();
+      ctx.arc(queen.x, queen.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawFood() {
+      ctx.fillStyle = '#ff0';
+      food.forEach(f => {
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawQueen();
+      drawFood();
+      ants.forEach(a => {
+        a.update();
+        a.draw();
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Hole Simulation - Debug Mode</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    /* Debug mode indicator */
+    body::before {
+      content: "DEBUG MODE";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: #ff5722;
+      color: white;
+      text-align: center;
+      padding: 5px;
+      font-weight: bold;
+      z-index: 9999;
+    }
+
+    /* Add padding to account for the debug mode indicator */
+    body {
+      padding-top: 30px;
+    }
+
+    /* Style for debug buttons */
+    .debug-button {
+      position: fixed;
+      bottom: 10px;
+      z-index: 1000;
+      padding: 5px 10px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #debug-toggle {
+      right: 10px;
+    }
+
+    #view-logs {
+      right: 80px;
+    }
+
+    #save-logs {
+      right: 160px;
+    }
+
+    #debug-panel {
+      position: fixed;
+      top: 30px;
+      right: 0;
+      width: 300px;
+      height: calc(100vh - 30px);
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      overflow-y: auto;
+      z-index: 9000;
+      font-family: monospace;
+      font-size: 12px;
+      display: none;
+    }
+
+    .debug-section {
+      margin-bottom: 15px;
+      border-bottom: 1px solid #555;
+      padding-bottom: 10px;
+    }
+
+    .debug-section h3 {
+      margin-top: 0;
+      color: #4CAF50;
+    }
+
+    .debug-value {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+
+    .debug-value span:first-child {
+      color: #90CAF9;
+    }
+
+    .debug-error {
+      color: #F44336;
+      margin-bottom: 5px;
+      padding: 3px;
+      background-color: rgba(244, 67, 54, 0.2);
+      border-radius: 3px;
+    }
+
+    .debug-warning {
+      color: #FFC107;
+      margin-bottom: 5px;
+      padding: 3px;
+      background-color: rgba(255, 193, 7, 0.2);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <div id="ant-stats">
+      <h3>Colony Stats</h3>
+      <div id="ant-count">Ants: 10</div>
+      <div id="scout-count">Scouts: 3</div>
+      <div id="worker-count">Workers: 7</div>
+    </div>
+
+    <div id="ant-stats">
+      <h3>Food Items</h3>
+      <div class="food-item selected" data-type="apple" data-decay="5" data-ants="2">
+        <img src="/img/apple.svg" alt="Apple">
+        <div>
+          <span class="food-item-name">Apple</span>
+          <div class="food-item-props">Decay: 5s | Ants: 2</div>
+        </div>
+      </div>
+      <div class="food-item" data-type="bread" data-decay="30" data-ants="3">
+        <img src="/img/bread.svg" alt="Bread">
+        <div>
+          <span class="food-item-name">Bread</span>
+          <div class="food-item-props">Decay: 30s | Ants: 3</div>
+        </div>
+      </div>
+      <div class="food-item" data-type="cheese" data-decay="20" data-ants="4">
+        <img src="/img/cheese.svg" alt="Cheese">
+        <div>
+          <span class="food-item-name">Cheese</span>
+          <div class="food-item-props">Decay: 20s | Ants: 4</div>
+        </div>
+      </div>
+      <div class="food-item" data-type="sugar" data-decay="10" data-ants="1">
+        <img src="/img/sugar.svg" alt="Sugar">
+        <div>
+          <span class="food-item-name">Sugar</span>
+          <div class="food-item-props">Decay: 10s | Ants: 1</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="obstacles-section">
+      <h3>Obstacles</h3>
+      <div class="obstacle-item" data-type="rock">
+        <img src="/img/rock.svg" alt="Rock">
+        <span class="obstacle-item-name">Rock</span>
+      </div>
+      <div class="obstacle-item" data-type="stick">
+        <img src="/img/stick.svg" alt="Stick">
+        <span class="obstacle-item-name">Stick</span>
+      </div>
+      <div class="obstacle-item" data-type="leaf">
+        <img src="/img/leaf.svg" alt="Leaf">
+        <span class="obstacle-item-name">Leaf</span>
+      </div>
+    </div>
+
+    <div id="tools-section">
+      <h3>Tools</h3>
+      <div class="tool-item" data-type="magnifying-glass">
+        <img src="/img/magnifying-glass.svg" alt="Magnifying Glass">
+        <div>
+          <span class="tool-item-name">Magnifying Glass</span>
+          <div class="tool-item-desc">Hover over ants or predators to burn them</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-container">
+    <div id="score">Score: 0</div>
+    <div id="game-controls">
+      <button class="game-button" id="save-button">Save Game</button>
+      <button class="game-button" id="load-button">Load Game</button>
+      <button class="game-button" id="reset-button">Reset Game</button>
+      <button class="game-button" id="settings-button">Performance</button>
+    </div>
+
+    <div id="settings-panel" style="display: none;">
+      <h3>Performance Settings</h3>
+      <div class="settings-row">
+        <label for="setting-cull">Cull Off-screen:</label>
+        <input type="checkbox" id="setting-cull" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-spatial">Spatial Partitioning:</label>
+        <input type="checkbox" id="setting-spatial" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-optimize">Optimize Rendering:</label>
+        <input type="checkbox" id="setting-optimize" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-frameskip">Frame Skipping:</label>
+        <input type="checkbox" id="setting-frameskip" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-simplified">Simplified Physics:</label>
+        <input type="checkbox" id="setting-simplified" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-quality">Graphics Quality:</label>
+        <select id="setting-quality">
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low" selected>Low</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label for="setting-target-fps">Target FPS:</label>
+        <select id="setting-target-fps">
+          <option value="60">60 FPS</option>
+          <option value="30">30 FPS</option>
+          <option value="15" selected>15 FPS</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label for="setting-antcount">Max Ants:</label>
+        <input type="range" id="setting-antcount" min="10" max="200" value="100">
+        <span id="antcount-value">100</span>
+      </div>
+      <div class="settings-row">
+        <label for="setting-draw-distance">Draw Distance:</label>
+        <input type="range" id="setting-draw-distance" min="50" max="300" value="150">
+        <span id="draw-distance-value">150</span>
+      </div>
+      <button class="game-button" id="close-settings">Close</button>
+      <button class="game-button" id="apply-settings">Apply</button>
+    </div>
+    <canvas id="antCanvas"></canvas>
+    <div id="magnifying-glass">
+      <img src="/img/magnifying-glass.svg" alt="Magnifying Glass">
+    </div>
+    <div id="performance-monitor">FPS: 0 | Ants: 0 | Food: 0 | Obstacles: 0</div>
+
+    <div id="environment-indicators">
+      <div class="environment-indicator" id="time-indicator">
+        <img src="/img/sun.svg" alt="Time" id="time-icon">
+        <span id="time-text">08:00</span>
+      </div>
+      <div class="environment-indicator" id="weather-indicator" style="display: none;">
+        <img src="/img/clear.svg" alt="Weather" id="weather-icon">
+        <span id="weather-text">Clear</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="tutorial-panel">
+    <h2>Welcome to Ant Simulation!</h2>
+    <p>This simulation allows you to observe and interact with a colony of ants as they gather food and navigate obstacles.</p>
+    <p><strong>Key Features:</strong></p>
+    <ul>
+      <li>Place different types of food for ants to collect</li>
+      <li>Add obstacles like rocks, sticks, and leaves</li>
+      <li>Use the magnifying glass to remove troublesome ants and predators</li>
+      <li>Experience day/night cycles and weather effects</li>
+      <li>Watch out for predators that will hunt your ants!</li>
+    </ul>
+    <p><strong>Tips:</strong></p>
+    <ul>
+      <li>Scout ants (yellow) find food and recruit worker ants</li>
+      <li>Worker ants (white) follow scouts and help carry food</li>
+      <li>Different terrains affect ant speed and food decay</li>
+      <li>Save your game progress using the Save button</li>
+    </ul>
+    <button id="tutorial-close">Got it!</button>
+  </div>
+
+  <!-- Debug panel -->
+  <div id="debug-panel">
+    <div class="debug-section">
+      <h3>Performance</h3>
+      <div class="debug-value">
+        <span>FPS:</span>
+        <span id="debug-fps">0</span>
+      </div>
+      <div class="debug-value">
+        <span>Frame Time:</span>
+        <span id="debug-frame-time">0 ms</span>
+      </div>
+      <div class="debug-value">
+        <span>Memory:</span>
+        <span id="debug-memory">0 MB</span>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <h3>Objects</h3>
+      <div class="debug-value">
+        <span>Ants:</span>
+        <span id="debug-ants">0</span>
+      </div>
+      <div class="debug-value">
+        <span>Food:</span>
+        <span id="debug-food">0</span>
+      </div>
+      <div class="debug-value">
+        <span>Obstacles:</span>
+        <span id="debug-obstacles">0</span>
+      </div>
+      <div class="debug-value">
+        <span>Predators:</span>
+        <span id="debug-predators">0</span>
+      </div>
+    </div>
+
+    <div class="debug-section">
+      <h3>Function Timings</h3>
+      <div id="debug-timings"></div>
+    </div>
+
+    <div class="debug-section">
+      <h3>Issues</h3>
+      <div id="debug-issues"></div>
+    </div>
+  </div>
+
+  <!-- Debug buttons -->
+  <button id="debug-toggle" class="debug-button">Toggle Debug</button>
+  <button id="view-logs" class="debug-button">View Logs</button>
+  <button id="save-logs" class="debug-button">Save Logs</button>
+  <button id="force-reset" class="debug-button" style="right: 240px;">Force Reset</button>
+
+  <!-- Load the main script -->
+  <script type="module" src="/static/js/main.js"></script>
+
+  <!-- Load the debug integration script -->
+  <script type="module" src="/static/js/debug-integration.js"></script>
+
+  <!-- Force initialization script with error handling -->
+  <script>
+    // Create an error display element
+    function showErrorMessage(message, error) {
+      const errorDisplay = document.createElement('div');
+      errorDisplay.style.position = 'fixed';
+      errorDisplay.style.top = '50%';
+      errorDisplay.style.left = '50%';
+      errorDisplay.style.transform = 'translate(-50%, -50%)';
+      errorDisplay.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+      errorDisplay.style.color = 'white';
+      errorDisplay.style.padding = '20px';
+      errorDisplay.style.borderRadius = '5px';
+      errorDisplay.style.maxWidth = '80%';
+      errorDisplay.style.maxHeight = '80%';
+      errorDisplay.style.overflow = 'auto';
+      errorDisplay.style.zIndex = '10000';
+      errorDisplay.style.fontFamily = 'monospace';
+      errorDisplay.style.fontSize = '14px';
+      errorDisplay.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+
+      let content = `<h2>Error Detected</h2><p>${message}</p>`;
+
+      if (error && error.stack) {
+        content += `<h3>Stack Trace:</h3><pre>${error.stack}</pre>`;
+      }
+
+      content += `<h3>Debug Information:</h3>
+        <ul>
+          <li>URL: ${window.location.href}</li>
+          <li>User Agent: ${navigator.userAgent}</li>
+          <li>Time: ${new Date().toLocaleString()}</li>
+        </ul>
+        <h3>Global Objects:</h3>
+        <ul>
+          <li>window.ants: ${window.ants ? `Array(${window.ants.length})` : 'undefined'}</li>
+          <li>window.food: ${window.food ? `Array(${window.food.length})` : 'undefined'}</li>
+          <li>window.obstacles: ${window.obstacles ? `Array(${window.obstacles.length})` : 'undefined'}</li>
+          <li>window.queen: ${window.queen ? JSON.stringify(window.queen) : 'undefined'}</li>
+          <li>window.antImage: ${window.antImage ? 'defined' : 'undefined'}</li>
+          <li>window.initializeAnts: ${typeof window.initializeAnts === 'function' ? 'function' : 'undefined'}</li>
+          <li>window.resetGame: ${typeof window.resetGame === 'function' ? 'function' : 'undefined'}</li>
+        </ul>
+        <button id="close-error" style="padding: 10px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">Close</button>
+        <button id="retry-init" style="padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Retry Initialization</button>`;
+
+      errorDisplay.innerHTML = content;
+      document.body.appendChild(errorDisplay);
+
+      document.getElementById('close-error').addEventListener('click', function() {
+        document.body.removeChild(errorDisplay);
+      });
+
+      document.getElementById('retry-init').addEventListener('click', function() {
+        document.body.removeChild(errorDisplay);
+        tryInitialization();
+      });
+    }
+
+    // Function to try initialization with error handling
+    function tryInitialization() {
+      try {
+        console.log("Forcing initialization...");
+
+        // Create a basic fallback for missing objects
+        if (!window.ants) window.ants = [];
+        if (!window.food) window.food = [];
+        if (!window.obstacles) window.obstacles = [];
+
+        // Create a fallback queen if needed
+        if (!window.queen) {
+          const canvas = document.getElementById('antCanvas');
+          if (canvas) {
+            window.queen = {
+              x: canvas.width / 2,
+              y: canvas.height - 50
+            };
+            console.log("Created fallback queen:", window.queen);
+          } else {
+            console.error("Canvas not found, cannot create fallback queen");
+          }
+        }
+
+        // Create a fallback antImage if needed
+        if (!window.antImage) {
+          window.antImage = new Image();
+          window.antImage.src = '/img/simple-ant.svg';
+          console.log("Created fallback antImage");
+        }
+
+        // Check if ants array exists and is empty
+        if (window.ants && window.ants.length === 0) {
+          console.log("No ants found, initializing...");
+
+          // Try to define a fallback initialization function if needed
+          if (typeof window.initializeAnts !== 'function') {
+            console.log("Creating fallback initializeAnts function");
+
+            // Import the Ant class if needed
+            import('./modules/ant.js').then(module => {
+              const Ant = module.Ant;
+
+              window.initializeAnts = function() {
+                console.log("Running fallback initialization");
+                // Clear existing ants
+                window.ants.length = 0;
+
+                // Set default counts if needed
+                if (typeof window.scoutCount === 'undefined') window.scoutCount = 3;
+                if (typeof window.workerCount === 'undefined') window.workerCount = 7;
+
+                // Create scout ants (30% of total)
+                for (let i = 0; i < window.scoutCount; i++) {
+                  window.ants.push(new Ant('scout', window.queen, window.antImage));
+                }
+
+                // Create worker ants (70% of total)
+                for (let i = 0; i < window.workerCount; i++) {
+                  window.ants.push(new Ant('worker', window.queen, window.antImage));
+                }
+
+                console.log(`Created ${window.ants.length} ants`);
+
+                // Try to update stats if the function exists
+                if (typeof window.updateStats === 'function') {
+                  window.updateStats();
+                }
+              };
+
+              // Now try to initialize
+              window.initializeAnts();
+            }).catch(error => {
+              console.error("Error importing Ant class:", error);
+              showErrorMessage("Failed to import Ant class", error);
+            });
+          } else {
+            // Use the existing initialization function
+            try {
+              window.initializeAnts();
+              console.log("Ants initialized!");
+            } catch (error) {
+              console.error("Error initializing ants:", error);
+              showErrorMessage("Error initializing ants", error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error during initialization:", error);
+        showErrorMessage("Error during initialization", error);
+      }
+    }
+
+    // Try initialization after a short delay
+    setTimeout(tryInitialization, 2000);
+
+    // Set up global error handler
+    window.addEventListener('error', function(event) {
+      console.error("Global error:", event.error);
+      showErrorMessage("Unhandled error occurred", event.error);
+      event.preventDefault();
+    });
+  </script>
+
+  <script>
+    // Debug panel toggle
+    document.getElementById('debug-toggle').addEventListener('click', function() {
+      const panel = document.getElementById('debug-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // View logs button
+    document.getElementById('view-logs').addEventListener('click', function() {
+      window.open('/debug-viewer', '_blank');
+    });
+
+    // Save logs button
+    document.getElementById('save-logs').addEventListener('click', function() {
+      if (window.debugMonitor) {
+        // Enable server logging
+        window.debugMonitor.config.logToServer = true;
+
+        // Force a log to server
+        window.debugMonitor.logToServer();
+
+        // Disable server logging again
+        setTimeout(() => {
+          window.debugMonitor.config.logToServer = false;
+          alert('Debug logs saved!');
+        }, 500);
+      } else {
+        alert('Debug monitor not initialized yet. Please try again in a moment.');
+      }
+    });
+
+    // Force reset button
+    document.getElementById('force-reset').addEventListener('click', function() {
+      if (typeof window.resetGame === 'function') {
+        window.resetGame();
+        alert('Game reset!');
+      } else {
+        // Try to reset manually
+        if (window.ants) window.ants.length = 0;
+        if (window.food) window.food.length = 0;
+        if (window.obstacles) window.obstacles.length = 0;
+        if (window.score !== undefined) window.score = 0;
+        if (window.scoutCount !== undefined) window.scoutCount = 3;
+        if (window.workerCount !== undefined) window.workerCount = 7;
+
+        // Try to initialize ants
+        if (typeof window.initializeAnts === 'function') {
+          window.initializeAnts();
+          alert('Game manually reset!');
+        } else {
+          alert('Could not reset the game. Try refreshing the page.');
+        }
+      }
+    });
+
+    // Update debug panel periodically
+    setInterval(function() {
+      if (window.debugMonitor) {
+        // Update performance metrics
+        const fps = document.getElementById('debug-fps');
+        const frameTime = document.getElementById('debug-frame-time');
+        const memory = document.getElementById('debug-memory');
+
+        if (window.debugMonitor.metrics.fps.length > 0) {
+          const lastFps = window.debugMonitor.metrics.fps[window.debugMonitor.metrics.fps.length - 1].value;
+          fps.textContent = lastFps.toFixed(1);
+        }
+
+        if (window.debugMonitor.metrics.frameTime.length > 0) {
+          const lastFrameTime = window.debugMonitor.metrics.frameTime[window.debugMonitor.metrics.frameTime.length - 1].value;
+          frameTime.textContent = lastFrameTime.toFixed(2) + ' ms';
+        }
+
+        if (window.debugMonitor.metrics.memoryUsage.length > 0) {
+          const lastMemory = window.debugMonitor.metrics.memoryUsage[window.debugMonitor.metrics.memoryUsage.length - 1].value;
+          memory.textContent = lastMemory + ' MB';
+        }
+
+        // Update object counts
+        const ants = document.getElementById('debug-ants');
+        const food = document.getElementById('debug-food');
+        const obstacles = document.getElementById('debug-obstacles');
+        const predators = document.getElementById('debug-predators');
+
+        if (window.debugMonitor.metrics.antCount.length > 0) {
+          ants.textContent = window.debugMonitor.metrics.antCount[window.debugMonitor.metrics.antCount.length - 1].value;
+        }
+
+        if (window.debugMonitor.metrics.foodCount.length > 0) {
+          food.textContent = window.debugMonitor.metrics.foodCount[window.debugMonitor.metrics.foodCount.length - 1].value;
+        }
+
+        if (window.debugMonitor.metrics.obstacleCount.length > 0) {
+          obstacles.textContent = window.debugMonitor.metrics.obstacleCount[window.debugMonitor.metrics.obstacleCount.length - 1].value;
+        }
+
+        if (window.debugMonitor.metrics.predatorCount.length > 0) {
+          predators.textContent = window.debugMonitor.metrics.predatorCount[window.debugMonitor.metrics.predatorCount.length - 1].value;
+        }
+
+        // Update function timings
+        const timings = document.getElementById('debug-timings');
+        let timingsHTML = '';
+
+        for (const [funcName, timing] of Object.entries(window.debugMonitor.functionTimings)) {
+          if (timing.calls > 0) {
+            const avgTime = timing.totalTime / timing.calls;
+            timingsHTML += `<div class="debug-value"><span>${funcName}:</span><span>${avgTime.toFixed(2)} ms</span></div>`;
+          }
+        }
+
+        timings.innerHTML = timingsHTML;
+
+        // Update issues
+        const issues = document.getElementById('debug-issues');
+        let issuesHTML = '';
+
+        // Show warnings
+        if (window.debugMonitor.metrics.warnings.length > 0) {
+          const recentWarnings = window.debugMonitor.metrics.warnings.slice(-5);
+          for (const warning of recentWarnings) {
+            issuesHTML += `<div class="debug-warning">${warning.message}</div>`;
+          }
+        }
+
+        // Show errors
+        if (window.debugMonitor.metrics.errors.length > 0) {
+          const recentErrors = window.debugMonitor.metrics.errors.slice(-5);
+          for (const error of recentErrors) {
+            issuesHTML += `<div class="debug-error">${error.message}</div>`;
+          }
+        }
+
+        issues.innerHTML = issuesHTML;
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

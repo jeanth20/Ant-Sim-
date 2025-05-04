@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Simulation Debug Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    
+    h1, h2, h3 {
+      color: #444;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .log-list {
+      float: left;
+      width: 25%;
+      padding-right: 20px;
+      border-right: 1px solid #eee;
+      height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .log-content {
+      float: right;
+      width: 70%;
+      height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .log-item {
+      padding: 10px;
+      margin-bottom: 5px;
+      background-color: #f9f9f9;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .log-item:hover {
+      background-color: #eee;
+    }
+    
+    .log-item.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    .metrics-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+    }
+    
+    .chart-container {
+      height: 200px;
+      margin-bottom: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    .error {
+      color: #D32F2F;
+      background-color: #FFEBEE;
+      padding: 5px;
+      border-radius: 3px;
+      margin-bottom: 5px;
+    }
+    
+    .warning {
+      color: #FF8F00;
+      background-color: #FFF8E1;
+      padding: 5px;
+      border-radius: 3px;
+      margin-bottom: 5px;
+    }
+    
+    .clearfix::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Ant Simulation Debug Viewer</h1>
+    
+    <div class="clearfix">
+      <div class="log-list">
+        <h2>Debug Logs</h2>
+        {% if log_files %}
+          {% for log_file in log_files %}
+            <div class="log-item" data-file="{{ log_file }}">
+              {{ log_file.replace('debug_', '').replace('.json', '').replace('_', ' ') }}
+            </div>
+          {% endfor %}
+        {% else %}
+          <p>No log files found.</p>
+        {% endif %}
+      </div>
+      
+      <div class="log-content">
+        <h2>Log Details</h2>
+        <div id="log-details">
+          <p>Select a log file to view details.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Function to load log data
+    async function loadLogData(filename) {
+      try {
+        const response = await fetch(`/api/debug-log/${filename}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        displayLogData(data);
+      } catch (error) {
+        console.error('Error loading log data:', error);
+        document.getElementById('log-details').innerHTML = `<p class="error">Error loading log data: ${error.message}</p>`;
+      }
+    }
+    
+    // Function to display log data
+    function displayLogData(data) {
+      const logDetails = document.getElementById('log-details');
+      
+      // Format timestamp
+      const timestamp = new Date(data.timestamp).toLocaleString();
+      
+      // Create HTML content
+      let html = `
+        <h3>Log from ${timestamp}</h3>
+        
+        <div class="metrics-section">
+          <h3>Performance Metrics</h3>
+          
+          <div class="chart-container">
+            <canvas id="fpsChart"></canvas>
+          </div>
+          
+          <div class="chart-container">
+            <canvas id="frameTimeChart"></canvas>
+          </div>
+          
+          <table>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+            </tr>
+            <tr>
+              <td>Ants</td>
+              <td>${data.metrics.antCount}</td>
+            </tr>
+            <tr>
+              <td>Food</td>
+              <td>${data.metrics.foodCount}</td>
+            </tr>
+            <tr>
+              <td>Obstacles</td>
+              <td>${data.metrics.obstacleCount}</td>
+            </tr>
+            <tr>
+              <td>Predators</td>
+              <td>${data.metrics.predatorCount || 0}</td>
+            </tr>
+            <tr>
+              <td>Memory Usage</td>
+              <td>${data.metrics.memoryUsage} MB</td>
+            </tr>
+          </table>
+        </div>
+      `;
+      
+      // Function timings
+      html += `
+        <div class="metrics-section">
+          <h3>Function Timings</h3>
+          <table>
+            <tr>
+              <th>Function</th>
+              <th>Avg Time (ms)</th>
+              <th>Max Time (ms)</th>
+              <th>Calls</th>
+            </tr>
+      `;
+      
+      for (const [funcName, timing] of Object.entries(data.functionTimings)) {
+        if (timing.calls > 0) {
+          const avgTime = timing.totalTime / timing.calls;
+          html += `
+            <tr>
+              <td>${funcName}</td>
+              <td>${avgTime.toFixed(2)}</td>
+              <td>${timing.maxTime.toFixed(2)}</td>
+              <td>${timing.calls}</td>
+            </tr>
+          `;
+        }
+      }
+      
+      html += `
+          </table>
+        </div>
+      `;
+      
+      // Long frames
+      if (data.longFrames && data.longFrames.length > 0) {
+        html += `
+          <div class="metrics-section">
+            <h3>Long Frames</h3>
+            <table>
+              <tr>
+                <th>Time</th>
+                <th>Duration (ms)</th>
+                <th>Ants</th>
+                <th>Food</th>
+                <th>Obstacles</th>
+              </tr>
+        `;
+        
+        for (const frame of data.longFrames) {
+          const frameTime = new Date(frame.time).toLocaleTimeString();
+          html += `
+            <tr>
+              <td>${frameTime}</td>
+              <td>${frame.duration.toFixed(2)}</td>
+              <td>${frame.antCount}</td>
+              <td>${frame.foodCount}</td>
+              <td>${frame.obstacleCount}</td>
+            </tr>
+          `;
+        }
+        
+        html += `
+            </table>
+          </div>
+        `;
+      }
+      
+      // Errors
+      if (data.errors && data.errors.length > 0) {
+        html += `
+          <div class="metrics-section">
+            <h3>Errors</h3>
+        `;
+        
+        for (const error of data.errors) {
+          const errorTime = new Date(error.time).toLocaleTimeString();
+          html += `
+            <div class="error">
+              <strong>${errorTime}:</strong> ${error.message}
+              ${error.stack ? `<pre>${error.stack}</pre>` : ''}
+            </div>
+          `;
+        }
+        
+        html += `
+          </div>
+        `;
+      }
+      
+      // Warnings
+      if (data.warnings && data.warnings.length > 0) {
+        html += `
+          <div class="metrics-section">
+            <h3>Warnings</h3>
+        `;
+        
+        for (const warning of data.warnings) {
+          const warningTime = new Date(warning.time).toLocaleTimeString();
+          html += `
+            <div class="warning">
+              <strong>${warningTime}:</strong> ${warning.message}
+            </div>
+          `;
+        }
+        
+        html += `
+          </div>
+        `;
+      }
+      
+      // Set HTML content
+      logDetails.innerHTML = html;
+      
+      // Create charts
+      createFpsChart(data.metrics.fps);
+      createFrameTimeChart(data.metrics.frameTime);
+    }
+    
+    // Function to create FPS chart
+    function createFpsChart(fpsData) {
+      if (!fpsData || fpsData.length === 0) return;
+      
+      const ctx = document.getElementById('fpsChart').getContext('2d');
+      
+      // Extract data
+      const labels = fpsData.map((item, index) => index);
+      const values = fpsData.map(item => item.value);
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'FPS',
+            data: values,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'FPS'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Sample'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Function to create frame time chart
+    function createFrameTimeChart(frameTimeData) {
+      if (!frameTimeData || frameTimeData.length === 0) return;
+      
+      const ctx = document.getElementById('frameTimeChart').getContext('2d');
+      
+      // Extract data
+      const labels = frameTimeData.map((item, index) => index);
+      const values = frameTimeData.map(item => item.value);
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Frame Time (ms)',
+            data: values,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Time (ms)'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Sample'
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Add event listeners to log items
+    document.querySelectorAll('.log-item').forEach(item => {
+      item.addEventListener('click', function() {
+        // Remove active class from all items
+        document.querySelectorAll('.log-item').forEach(i => i.classList.remove('active'));
+        
+        // Add active class to clicked item
+        this.classList.add('active');
+        
+        // Load log data
+        const filename = this.getAttribute('data-file');
+        loadLogData(filename);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Sun</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Sun circle -->
+        <circle fill="#FFD700" cx="20" cy="20" r="12"></circle>
+        
+        <!-- Sun rays -->
+        <line x1="20" y1="2" x2="20" y2="8" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="20" y1="32" x2="20" y2="38" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="2" y1="20" x2="8" y2="20" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="32" y1="20" x2="38" y2="20" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+        
+        <line x1="6.34" y1="6.34" x2="10.83" y2="10.83" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="29.17" y1="29.17" x2="33.66" y2="33.66" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="6.34" y1="33.66" x2="10.83" y2="29.17" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="29.17" y1="10.83" x2="33.66" y2="6.34" stroke="#FFD700" stroke-width="2" stroke-linecap="round"></line>
+    </g>
+</svg>

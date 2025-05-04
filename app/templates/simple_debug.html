@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Simulation - Simple Debug Mode</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #222;
+      color: #fff;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3 {
+      color: #4CAF50;
+    }
+    
+    .debug-section {
+      background-color: #333;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    
+    .debug-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    pre {
+      background-color: #444;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 300px;
+    }
+    
+    .error {
+      color: #f44336;
+    }
+    
+    .success {
+      color: #4CAF50;
+    }
+    
+    .warning {
+      color: #ff9800;
+    }
+    
+    #canvas-container {
+      width: 100%;
+      height: 400px;
+      background-color: #000;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    canvas {
+      display: block;
+    }
+    
+    #log-output {
+      height: 200px;
+      overflow: auto;
+      background-color: #444;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ant Simulation - Simple Debug Mode</h1>
+    
+    <div class="debug-controls">
+      <button id="check-environment">Check Environment</button>
+      <button id="test-canvas">Test Canvas</button>
+      <button id="test-ant">Test Ant Creation</button>
+      <button id="clear-log">Clear Log</button>
+    </div>
+    
+    <div class="debug-section">
+      <h2>Environment Information</h2>
+      <div id="environment-info">Click "Check Environment" to see information</div>
+    </div>
+    
+    <div class="debug-section">
+      <h2>Canvas Test</h2>
+      <div id="canvas-container">
+        <canvas id="testCanvas" width="800" height="400"></canvas>
+      </div>
+    </div>
+    
+    <div class="debug-section">
+      <h2>Log Output</h2>
+      <div id="log-output"></div>
+    </div>
+  </div>
+  
+  <script>
+    // Custom logging function
+    function log(message, type = 'info') {
+      const logOutput = document.getElementById('log-output');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = type;
+      entry.textContent = `[${timestamp}] ${message}`;
+      logOutput.appendChild(entry);
+      logOutput.scrollTop = logOutput.scrollHeight;
+      
+      // Also log to console
+      console[type === 'error' ? 'error' : type === 'warning' ? 'warn' : 'log'](message);
+    }
+    
+    // Check environment button
+    document.getElementById('check-environment').addEventListener('click', function() {
+      const envInfo = document.getElementById('environment-info');
+      
+      try {
+        const info = {
+          userAgent: navigator.userAgent,
+          screenSize: `${window.innerWidth}x${window.innerHeight}`,
+          pixelRatio: window.devicePixelRatio,
+          language: navigator.language,
+          cookiesEnabled: navigator.cookieEnabled,
+          localStorage: typeof localStorage !== 'undefined',
+          sessionStorage: typeof sessionStorage !== 'undefined',
+          webGL: checkWebGL(),
+          canvas2D: checkCanvas2D()
+        };
+        
+        let html = '<pre>';
+        for (const [key, value] of Object.entries(info)) {
+          html += `${key}: ${value}\n`;
+        }
+        html += '</pre>';
+        
+        envInfo.innerHTML = html;
+        log('Environment check completed', 'success');
+      } catch (error) {
+        envInfo.innerHTML = `<div class="error">Error checking environment: ${error.message}</div>`;
+        log(`Error checking environment: ${error.message}`, 'error');
+      }
+    });
+    
+    // Check WebGL support
+    function checkWebGL() {
+      try {
+        const canvas = document.createElement('canvas');
+        return !!window.WebGLRenderingContext && 
+          (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // Check Canvas 2D support
+    function checkCanvas2D() {
+      try {
+        const canvas = document.createElement('canvas');
+        return !!canvas.getContext('2d');
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    // Test canvas button
+    document.getElementById('test-canvas').addEventListener('click', function() {
+      const canvas = document.getElementById('testCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      try {
+        // Clear canvas
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw some test shapes
+        // Queen
+        ctx.fillStyle = '#0f0';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height - 50, 10, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Food
+        ctx.fillStyle = '#ff0';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2 - 100, canvas.height / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Ant
+        drawSimpleAnt(ctx, canvas.width / 2 + 100, canvas.height / 2, 'worker');
+        drawSimpleAnt(ctx, canvas.width / 2 + 150, canvas.height / 2, 'scout');
+        
+        log('Canvas test completed successfully', 'success');
+      } catch (error) {
+        log(`Canvas test failed: ${error.message}`, 'error');
+      }
+    });
+    
+    // Draw a simple ant
+    function drawSimpleAnt(ctx, x, y, type) {
+      ctx.save();
+      
+      // Draw body
+      ctx.fillStyle = type === 'scout' ? '#FFCC00' : '#DDDDDD';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 8, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw head
+      ctx.beginPath();
+      ctx.arc(x + 8, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw legs
+      ctx.strokeStyle = type === 'scout' ? '#CC9900' : '#AAAAAA';
+      ctx.lineWidth = 1;
+      
+      // Three legs on each side
+      for (let i = -1; i <= 1; i++) {
+        // Left side legs
+        ctx.beginPath();
+        ctx.moveTo(x - 4, y);
+        ctx.lineTo(x - 10, y + i * 5);
+        ctx.stroke();
+        
+        // Right side legs
+        ctx.beginPath();
+        ctx.moveTo(x + 4, y);
+        ctx.lineTo(x + 10, y + i * 5);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+    
+    // Test ant creation
+    document.getElementById('test-ant').addEventListener('click', async function() {
+      try {
+        log('Testing ant creation...', 'info');
+        
+        // Create a simple Ant class for testing
+        class TestAnt {
+          constructor(type = 'worker', queen, antImage) {
+            this.type = type;
+            this.x = queen ? queen.x + Math.random() * 50 - 25 : 400;
+            this.y = queen ? queen.y + Math.random() * 50 - 25 : 300;
+            this.speed = type === 'scout' ? 1.8 : 1.2;
+            this.target = null;
+            this.carrying = false;
+            this.assignedFood = null;
+            this.assignedWorkers = [];
+            this.followingScout = null;
+            this.antImage = antImage;
+            this.active = true;
+          }
+          
+          draw(ctx) {
+            if (!this.active) return;
+            
+            drawSimpleAnt(ctx, this.x, this.y, this.type);
+          }
+        }
+        
+        // Create a queen
+        const queen = { x: 400, y: 350 };
+        
+        // Create an ant image
+        const antImage = new Image();
+        antImage.src = '/img/simple-ant.svg';
+        
+        // Create some ants
+        const ants = [];
+        
+        // Create scout ants
+        for (let i = 0; i < 3; i++) {
+          ants.push(new TestAnt('scout', queen, antImage));
+        }
+        
+        // Create worker ants
+        for (let i = 0; i < 7; i++) {
+          ants.push(new TestAnt('worker', queen, antImage));
+        }
+        
+        log(`Created ${ants.length} test ants`, 'success');
+        
+        // Draw the ants
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Clear canvas
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw queen
+        ctx.fillStyle = '#0f0';
+        ctx.beginPath();
+        ctx.arc(queen.x, queen.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw ants
+        ants.forEach(ant => ant.draw(ctx));
+        
+        log('Ant test completed successfully', 'success');
+      } catch (error) {
+        log(`Ant test failed: ${error.message}`, 'error');
+      }
+    });
+    
+    // Clear log button
+    document.getElementById('clear-log').addEventListener('click', function() {
+      document.getElementById('log-output').innerHTML = '';
+      log('Log cleared', 'info');
+    });
+    
+    // Initial log message
+    log('Simple debug page loaded', 'info');
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="30px" viewBox="0 0 40 30" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Rock</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M5,20 C5,15 10,10 15,10 C20,10 25,5 30,5 C35,5 35,10 35,15 C35,20 30,25 25,25 C20,25 15,20 10,20 C5,20 5,25 5,20 Z" fill="#777777" stroke="#555555" stroke-width="1"></path>
+        <path d="M10,15 C10,12 15,10 20,10 C25,10 30,12 30,15 C30,18 25,20 20,20 C15,20 10,18 10,15 Z" fill="#999999"></path>
+    </g>
+</svg>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Beetle</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Body -->
+        <ellipse fill="#663300" cx="20" cy="22" rx="10" ry="8"></ellipse>
+        
+        <!-- Head -->
+        <circle fill="#663300" cx="20" cy="12" r="5"></circle>
+        
+        <!-- Eyes -->
+        <circle fill="#FFFFFF" cx="18" cy="10" r="1"></circle>
+        <circle fill="#FFFFFF" cx="22" cy="10" r="1"></circle>
+        
+        <!-- Mandibles -->
+        <path d="M18,14 L16,16" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M22,14 L24,16" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+        
+        <!-- Shell pattern -->
+        <path d="M15,18 L25,18" stroke="#442200" stroke-width="1"></path>
+        <path d="M13,22 L27,22" stroke="#442200" stroke-width="1"></path>
+        <path d="M15,26 L25,26" stroke="#442200" stroke-width="1"></path>
+        
+        <!-- Legs -->
+        <path d="M12,18 L8,16" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M12,22 L6,22" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M12,26 L8,28" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+        
+        <path d="M28,18 L32,16" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M28,22 L34,22" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M28,26 L32,28" stroke="#663300" stroke-width="2" stroke-linecap="round"></path>
+    </g>
+</svg>

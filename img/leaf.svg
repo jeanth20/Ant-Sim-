@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Leaf</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M20,5 C30,5 35,15 35,25 C25,35 15,35 5,25 C5,15 10,5 20,5 Z" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"></path>
+        <path d="M20,10 C25,10 30,15 30,20 C25,25 15,25 10,20 C10,15 15,10 20,10 Z" fill="#66BB6A"></path>
+        <path d="M20,5 L20,35" stroke="#2E7D32" stroke-width="1" stroke-linecap="round" stroke-dasharray="2,2"></path>
+        <path d="M5,20 L35,20" stroke="#2E7D32" stroke-width="1" stroke-linecap="round" stroke-dasharray="2,2"></path>
+    </g>
+</svg>

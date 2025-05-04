@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Moon</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Moon shape -->
+        <path d="M25,8 C15,8 10,15 10,22 C10,29 15,32 22,32 C29,32 32,28 32,22 C32,16 29,12 25,12 C21,12 20,16 20,18 C20,20 21,22 23,22 C25,22 26,20 26,18" fill="#E6E6FA"></path>
+        
+        <!-- Stars -->
+        <circle fill="#FFFFFF" cx="8" cy="8" r="1"></circle>
+        <circle fill="#FFFFFF" cx="32" cy="12" r="1"></circle>
+        <circle fill="#FFFFFF" cx="6" cy="28" r="1"></circle>
+        <circle fill="#FFFFFF" cx="36" cy="30" r="1"></circle>
+        <circle fill="#FFFFFF" cx="28" cy="6" r="1"></circle>
+    </g>
+</svg>

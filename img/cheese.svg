@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Cheese</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M2,9 L22,9 L22,18 C22,19.1046 21.1046,20 20,20 L4,20 C2.89543,20 2,19.1046 2,18 L2,9 Z" fill="#FFC107"></path>
+        <path d="M2,9 L22,9 L12,4 L2,9 Z" fill="#FFEB3B"></path>
+        <circle fill="#FFFFFF" cx="7" cy="13" r="1"></circle>
+        <circle fill="#FFFFFF" cx="15" cy="15" r="1"></circle>
+        <circle fill="#FFFFFF" cx="10" cy="17" r="1"></circle>
+    </g>
+</svg>

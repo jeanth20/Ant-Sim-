@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Apple</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M12,3 C12.5523,3 13,3.44772 13,4 L13,5 C13,5.55228 12.5523,6 12,6 C11.4477,6 11,5.55228 11,5 L11,4 C11,3.44772 11.4477,3 12,3 Z" fill="#4CAF50" fill-rule="nonzero"></path>
+        <path d="M12,6 C15.866,6 19,9.13401 19,13 C19,16.866 15.866,20 12,20 C8.13401,20 5,16.866 5,13 C5,9.13401 8.13401,6 12,6 Z" fill="#F44336" stroke="#D32F2F" stroke-width="1"></path>
+    </g>
+</svg>

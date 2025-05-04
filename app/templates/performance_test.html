@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Simulation - Performance Test</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #222;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3 {
+      color: #4CAF50;
+    }
+    
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    #canvas-container {
+      width: 100%;
+      height: 500px;
+      background-color: #000;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    canvas {
+      display: block;
+    }
+    
+    .ant {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: white;
+      border-radius: 50%;
+    }
+    
+    .scout {
+      background-color: yellow;
+    }
+    
+    .queen {
+      width: 16px;
+      height: 16px;
+      background-color: green;
+      border-radius: 50%;
+    }
+    
+    .food {
+      width: 12px;
+      height: 12px;
+      background-color: orange;
+      border-radius: 50%;
+    }
+    
+    .obstacle {
+      position: absolute;
+      background-color: #555;
+      border-radius: 2px;
+    }
+    
+    .stats {
+      margin-top: 20px;
+      background-color: #333;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    
+    .stat-item {
+      background-color: #444;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    
+    .stat-label {
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ant Simulation - Performance Test</h1>
+    
+    <div class="controls">
+      <button id="start-button">Start</button>
+      <button id="stop-button">Stop</button>
+      <button id="add-ants-button">Add 10 Ants</button>
+      <button id="add-food-button">Add Food</button>
+      <button id="add-obstacles-button">Add Obstacle</button>
+      <button id="clear-button">Clear All</button>
+    </div>
+    
+    <div id="canvas-container">
+      <canvas id="simulation-canvas" width="1200" height="500"></canvas>
+    </div>
+    
+    <div class="stats">
+      <h2>Simulation Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="ant-count">0</div>
+          <div class="stat-label">Ants</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="scout-count">0</div>
+          <div class="stat-label">Scouts</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="worker-count">0</div>
+          <div class="stat-label">Workers</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="food-count">0</div>
+          <div class="stat-label">Food</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="obstacle-count">0</div>
+          <div class="stat-label">Obstacles</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="fps-display">0</div>
+          <div class="stat-label">FPS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Simulation state
+    const state = {
+      ants: [],
+      food: [],
+      obstacles: [],
+      queen: null,
+      running: false,
+      lastTime: 0,
+      canvas: null,
+      ctx: null,
+      scoutCount: 0,
+      workerCount: 0
+    };
+    
+    // Make state available globally for debugging
+    window.ants = state.ants;
+    window.food = state.food;
+    window.obstacles = state.obstacles;
+    
+    // Ant class
+    class Ant {
+      constructor(type = 'worker', queen, antImage = null) {
+        this.type = type;
+        this.x = queen ? queen.x + (Math.random() * 100 - 50) : 600;
+        this.y = queen ? queen.y + (Math.random() * 100 - 50) : 400;
+        this.speed = type === 'scout' ? 2 : 1;
+        this.target = null;
+        this.carrying = false;
+        this.assignedFood = null;
+        this.size = 8;
+        this.color = type === 'scout' ? '#FFCC00' : '#FFFFFF';
+        this.active = true;
+      }
+      
+      update() {
+        if (!this.active) return;
+        
+        // Simple random movement
+        this.x += (Math.random() * 2 - 1) * this.speed;
+        this.y += (Math.random() * 2 - 1) * this.speed;
+        
+        // Keep within bounds
+        this.x = Math.max(this.size, Math.min(state.canvas.width - this.size, this.x));
+        this.y = Math.max(this.size, Math.min(state.canvas.height - this.size, this.y));
+        
+        // Check for food
+        if (!this.carrying) {
+          for (const food of state.food) {
+            const dx = this.x - food.x;
+            const dy = this.y - food.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < this.size + food.size) {
+              this.carrying = true;
+              // Remove food
+              const index = state.food.indexOf(food);
+              if (index !== -1) {
+                state.food.splice(index, 1);
+              }
+              break;
+            }
+          }
+        } else if (state.queen) {
+          // Return to queen
+          const dx = this.x - state.queen.x;
+          const dy = this.y - state.queen.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < this.size + state.queen.size) {
+            this.carrying = false;
+          }
+        }
+        
+        // Check for obstacles
+        for (const obstacle of state.obstacles) {
+          if (this.x > obstacle.x && this.x < obstacle.x + obstacle.width &&
+              this.y > obstacle.y && this.y < obstacle.y + obstacle.height) {
+            // Simple bounce
+            this.x += (Math.random() * 10 - 5);
+            this.y += (Math.random() * 10 - 5);
+          }
+        }
+      }
+      
+      draw(ctx) {
+        if (!this.active) return;
+        
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (this.carrying) {
+          ctx.fillStyle = '#FFA500';
+          ctx.beginPath();
+          ctx.arc(this.x, this.y - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    
+    // Food class
+    class Food {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 12;
+        this.color = '#FFA500';
+      }
+      
+      draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Obstacle class
+    class Obstacle {
+      constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.color = '#555555';
+      }
+      
+      draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+      }
+    }
+    
+    // Queen class
+    class Queen {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 16;
+        this.color = '#00FF00';
+      }
+      
+      draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Initialize the simulation
+    function initSimulation() {
+      // Get canvas and context
+      state.canvas = document.getElementById('simulation-canvas');
+      state.ctx = state.canvas.getContext('2d');
+      
+      // Create queen
+      state.queen = new Queen(state.canvas.width / 2, state.canvas.height - 50);
+      
+      // Create initial ants
+      for (let i = 0; i < 10; i++) {
+        const type = i < 3 ? 'scout' : 'worker';
+        state.ants.push(new Ant(type, state.queen));
+        
+        if (type === 'scout') {
+          state.scoutCount++;
+        } else {
+          state.workerCount++;
+        }
+      }
+      
+      // Add some food
+      for (let i = 0; i < 5; i++) {
+        const x = Math.random() * (state.canvas.width - 30) + 15;
+        const y = Math.random() * (state.canvas.height - 100) + 15;
+        state.food.push(new Food(x, y));
+      }
+      
+      // Add some obstacles
+      for (let i = 0; i < 3; i++) {
+        const x = Math.random() * (state.canvas.width - 100);
+        const y = Math.random() * (state.canvas.height - 100);
+        const width = 30 + Math.random() * 70;
+        const height = 20 + Math.random() * 30;
+        state.obstacles.push(new Obstacle(x, y, width, height));
+      }
+      
+      // Update stats
+      updateStats();
+      
+      console.log('Simulation initialized');
+    }
+    
+    // Update simulation
+    function updateSimulation(timestamp) {
+      if (!state.running) return;
+      
+      // Calculate delta time
+      const deltaTime = timestamp - state.lastTime;
+      state.lastTime = timestamp;
+      
+      // Clear canvas
+      state.ctx.fillStyle = 'black';
+      state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
+      
+      // Update and draw ants
+      for (const ant of state.ants) {
+        ant.update();
+        ant.draw(state.ctx);
+      }
+      
+      // Draw food
+      for (const food of state.food) {
+        food.draw(state.ctx);
+      }
+      
+      // Draw obstacles
+      for (const obstacle of state.obstacles) {
+        obstacle.draw(state.ctx);
+      }
+      
+      // Draw queen
+      if (state.queen) {
+        state.queen.draw(state.ctx);
+      }
+      
+      // Continue animation loop
+      requestAnimationFrame(updateSimulation);
+    }
+    
+    // Update statistics display
+    function updateStats() {
+      document.getElementById('ant-count').textContent = state.ants.length;
+      document.getElementById('scout-count').textContent = state.scoutCount;
+      document.getElementById('worker-count').textContent = state.workerCount;
+      document.getElementById('food-count').textContent = state.food.length;
+      document.getElementById('obstacle-count').textContent = state.obstacles.length;
+      
+      // Make counts available globally
+      window.scoutCount = state.scoutCount;
+      window.workerCount = state.workerCount;
+    }
+    
+    // Make updateStats available globally
+    window.updateStats = updateStats;
+    
+    // Start button
+    document.getElementById('start-button').addEventListener('click', function() {
+      if (!state.running) {
+        state.running = true;
+        state.lastTime = performance.now();
+        requestAnimationFrame(updateSimulation);
+        console.log('Simulation started');
+      }
+    });
+    
+    // Stop button
+    document.getElementById('stop-button').addEventListener('click', function() {
+      state.running = false;
+      console.log('Simulation stopped');
+    });
+    
+    // Add ants button
+    document.getElementById('add-ants-button').addEventListener('click', function() {
+      for (let i = 0; i < 10; i++) {
+        const type = Math.random() < 0.3 ? 'scout' : 'worker';
+        state.ants.push(new Ant(type, state.queen));
+        
+        if (type === 'scout') {
+          state.scoutCount++;
+        } else {
+          state.workerCount++;
+        }
+      }
+      
+      updateStats();
+      console.log(`Added 10 ants. Total: ${state.ants.length}`);
+    });
+    
+    // Add food button
+    document.getElementById('add-food-button').addEventListener('click', function() {
+      const x = Math.random() * (state.canvas.width - 30) + 15;
+      const y = Math.random() * (state.canvas.height - 100) + 15;
+      state.food.push(new Food(x, y));
+      
+      updateStats();
+      console.log(`Added food. Total: ${state.food.length}`);
+    });
+    
+    // Add obstacle button
+    document.getElementById('add-obstacles-button').addEventListener('click', function() {
+      const x = Math.random() * (state.canvas.width - 100);
+      const y = Math.random() * (state.canvas.height - 100);
+      const width = 30 + Math.random() * 70;
+      const height = 20 + Math.random() * 30;
+      state.obstacles.push(new Obstacle(x, y, width, height));
+      
+      updateStats();
+      console.log(`Added obstacle. Total: ${state.obstacles.length}`);
+    });
+    
+    // Clear button
+    document.getElementById('clear-button').addEventListener('click', function() {
+      state.ants = [];
+      state.food = [];
+      state.obstacles = [];
+      state.scoutCount = 0;
+      state.workerCount = 0;
+      
+      // Reinitialize
+      initSimulation();
+      
+      console.log('Cleared all and reinitialized');
+    });
+    
+    // Update FPS display
+    setInterval(function() {
+      const fpsDisplay = document.getElementById('fps-display');
+      if (fpsDisplay && window.performanceState && window.performanceState.fps) {
+        fpsDisplay.textContent = window.performanceState.fps;
+      }
+    }, 1000);
+    
+    // Initialize on page load
+    window.addEventListener('load', function() {
+      initSimulation();
+      console.log('Page loaded');
+    });
+  </script>
+  
+  <!-- Load the performance monitor script -->
+  <script src="/static/js/performance-monitor.js"></script>
+</body>
+</html>

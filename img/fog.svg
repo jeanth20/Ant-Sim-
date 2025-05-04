@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Fog</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Fog layers -->
+        <path d="M5,15 L35,15" stroke="#CCCCCC" stroke-width="3" stroke-linecap="round"></path>
+        <path d="M8,20 L32,20" stroke="#CCCCCC" stroke-width="3" stroke-linecap="round"></path>
+        <path d="M10,25 L30,25" stroke="#CCCCCC" stroke-width="3" stroke-linecap="round"></path>
+        <path d="M12,30 L28,30" stroke="#CCCCCC" stroke-width="3" stroke-linecap="round"></path>
+    </g>
+</svg>

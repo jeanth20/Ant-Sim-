@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Magnifying Glass</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Handle -->
+        <path d="M28,28 L36,36" stroke="#8B4513" stroke-width="4" stroke-linecap="round"></path>
+        
+        <!-- Glass Circle -->
+        <circle fill="#FFFFFF" fill-opacity="0.3" cx="18" cy="18" r="14"></circle>
+        <circle stroke="#8B4513" stroke-width="2" cx="18" cy="18" r="14"></circle>
+        
+        <!-- Reflection -->
+        <path d="M12,12 C14,10 16,9 18,9" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"></path>
+        
+        <!-- Burning Effect (when active) -->
+        <circle fill="#FF0000" fill-opacity="0.3" cx="18" cy="18" r="6" class="burning-effect" style="display: none;"></circle>
+    </g>
+</svg>

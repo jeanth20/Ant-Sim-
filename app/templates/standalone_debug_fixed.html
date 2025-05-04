@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Simulation - Standalone Debug (Fixed)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #222;
+      color: #fff;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3 {
+      color: #4CAF50;
+    }
+    
+    .debug-section {
+      background-color: #333;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    
+    .debug-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    pre {
+      background-color: #444;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 300px;
+    }
+    
+    .error {
+      color: #f44336;
+    }
+    
+    .success {
+      color: #4CAF50;
+    }
+    
+    .warning {
+      color: #ff9800;
+    }
+    
+    #canvas-container {
+      width: 100%;
+      height: 400px;
+      background-color: #000;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    canvas {
+      display: block;
+    }
+    
+    #log-output {
+      height: 200px;
+      overflow: auto;
+      background-color: #444;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      margin-top: 20px;
+    }
+    
+    .performance-monitor {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ant Simulation - Standalone Debug (Fixed)</h1>
+    
+    <div class="debug-controls">
+      <button id="start-simulation">Start Simulation</button>
+      <button id="stop-simulation">Stop Simulation</button>
+      <button id="add-ants">Add 10 Ants</button>
+      <button id="add-food">Add Food</button>
+      <button id="clear-all">Clear All</button>
+      <button id="toggle-performance">Toggle Performance Monitor</button>
+    </div>
+    
+    <div class="debug-section">
+      <h2>Simulation</h2>
+      <div id="canvas-container">
+        <canvas id="debug-canvas" width="1200" height="400"></canvas>
+      </div>
+    </div>
+    
+    <div class="debug-section">
+      <h2>Performance</h2>
+      <div id="performance-stats">
+        <div>FPS: <span id="fps">0</span></div>
+        <div>Ants: <span id="ant-count">0</span></div>
+        <div>Frame Time: <span id="frame-time">0</span> ms</div>
+        <div>Memory: <span id="memory">0</span> MB</div>
+      </div>
+    </div>
+    
+    <div class="debug-section">
+      <h2>Log Output</h2>
+      <div id="log-output"></div>
+    </div>
+  </div>
+  
+  <div id="performance-monitor" class="performance-monitor" style="display: none;">
+    FPS: <span id="fps-monitor">0</span> | 
+    Ants: <span id="ant-count-monitor">0</span> | 
+    Frame Time: <span id="frame-time-monitor">0</span> ms
+  </div>
+  
+  <script>
+    // Custom logging function
+    function log(message, type = 'info') {
+      const logOutput = document.getElementById('log-output');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = type;
+      entry.textContent = `[${timestamp}] ${message}`;
+      logOutput.appendChild(entry);
+      logOutput.scrollTop = logOutput.scrollHeight;
+      
+      // Also log to console
+      console[type === 'error' ? 'error' : type === 'warning' ? 'warn' : 'log'](message);
+    }
+    
+    // Simulation state
+    const state = {
+      ants: [],
+      food: [],
+      queen: null,
+      running: false,
+      lastTime: 0,
+      frameCount: 0,
+      lastFpsUpdate: 0,
+      fps: 0,
+      frameTime: 0,
+      canvas: null,
+      ctx: null
+    };
+    
+    // Make state available globally for debugging
+    window.ants = state.ants;
+    window.food = state.food;
+    
+    // Ant class (simplified version that doesn't rely on external modules)
+    class Ant {
+      constructor(type = 'worker', queen = null, antImage = null) {
+        this.type = type;
+        this.x = queen ? queen.x + (Math.random() * 100 - 50) : 600;
+        this.y = queen ? queen.y + (Math.random() * 100 - 50) : 300;
+        this.speed = type === 'scout' ? 2 : 1;
+        this.target = null;
+        this.carrying = false;
+        this.assignedFood = null;
+        this.size = 8;
+        this.color = type === 'scout' ? '#FFCC00' : '#FFFFFF';
+        this.active = true;
+        
+        // Log creation
+        log(`Created ${type} ant at (${Math.round(this.x)}, ${Math.round(this.y)})`, 'success');
+      }
+      
+      update() {
+        if (!this.active) return;
+        
+        // Simple random movement
+        this.x += (Math.random() * 2 - 1) * this.speed;
+        this.y += (Math.random() * 2 - 1) * this.speed;
+        
+        // Keep within bounds
+        this.x = Math.max(this.size, Math.min(state.canvas.width - this.size, this.x));
+        this.y = Math.max(this.size, Math.min(state.canvas.height - this.size, this.y));
+        
+        // Check for food
+        if (!this.carrying) {
+          for (const food of state.food) {
+            const dx = this.x - food.x;
+            const dy = this.y - food.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < this.size + food.size) {
+              this.carrying = true;
+              // Remove food
+              const index = state.food.indexOf(food);
+              if (index !== -1) {
+                state.food.splice(index, 1);
+              }
+              break;
+            }
+          }
+        } else if (state.queen) {
+          // Return to queen
+          const dx = this.x - state.queen.x;
+          const dy = this.y - state.queen.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < this.size + state.queen.size) {
+            this.carrying = false;
+          }
+        }
+      }
+      
+      draw(ctx) {
+        if (!this.active) return;
+        
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (this.carrying) {
+          ctx.fillStyle = '#FFA500';
+          ctx.beginPath();
+          ctx.arc(this.x, this.y - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    
+    // Food class
+    class Food {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 12;
+        this.color = '#FFA500';
+      }
+      
+      draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Queen class
+    class Queen {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 16;
+        this.color = '#00FF00';
+      }
+      
+      draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Initialize the simulation
+    function initSimulation() {
+      log('Initializing simulation');
+      
+      // Get canvas and context
+      state.canvas = document.getElementById('debug-canvas');
+      state.ctx = state.canvas.getContext('2d');
+      
+      // Create queen
+      state.queen = new Queen(state.canvas.width / 2, state.canvas.height - 50);
+      
+      // Create initial ants
+      for (let i = 0; i < 10; i++) {
+        const type = i < 3 ? 'scout' : 'worker';
+        state.ants.push(new Ant(type, state.queen));
+      }
+      
+      // Add some food
+      for (let i = 0; i < 5; i++) {
+        const x = Math.random() * (state.canvas.width - 30) + 15;
+        const y = Math.random() * (state.canvas.height - 100) + 15;
+        state.food.push(new Food(x, y));
+      }
+      
+      updateStats();
+      log('Simulation initialized', 'success');
+    }
+    
+    // Update simulation
+    function updateSimulation(timestamp) {
+      if (!state.running) return;
+      
+      // Calculate delta time
+      const deltaTime = timestamp - state.lastTime;
+      state.lastTime = timestamp;
+      state.frameTime = deltaTime;
+      
+      // Update FPS counter
+      state.frameCount++;
+      if (timestamp - state.lastFpsUpdate >= 1000) {
+        state.fps = Math.round((state.frameCount * 1000) / (timestamp - state.lastFpsUpdate));
+        state.frameCount = 0;
+        state.lastFpsUpdate = timestamp;
+        
+        // Update stats display
+        updateStats();
+      }
+      
+      // Clear canvas
+      state.ctx.fillStyle = 'black';
+      state.ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
+      
+      // Update and draw ants
+      for (const ant of state.ants) {
+        ant.update();
+        ant.draw(state.ctx);
+      }
+      
+      // Draw food
+      for (const food of state.food) {
+        food.draw(state.ctx);
+      }
+      
+      // Draw queen
+      if (state.queen) {
+        state.queen.draw(state.ctx);
+      }
+      
+      // Continue animation loop
+      requestAnimationFrame(updateSimulation);
+    }
+    
+    // Update statistics display
+    function updateStats() {
+      document.getElementById('fps').textContent = state.fps;
+      document.getElementById('ant-count').textContent = state.ants.length;
+      document.getElementById('frame-time').textContent = state.frameTime.toFixed(2);
+      
+      // Update performance monitor
+      document.getElementById('fps-monitor').textContent = state.fps;
+      document.getElementById('ant-count-monitor').textContent = state.ants.length;
+      document.getElementById('frame-time-monitor').textContent = state.frameTime.toFixed(2);
+      
+      // Update memory usage if available
+      if (window.performance && window.performance.memory) {
+        const memory = Math.round(window.performance.memory.usedJSHeapSize / (1024 * 1024));
+        document.getElementById('memory').textContent = memory;
+      }
+    }
+    
+    // Start simulation button
+    document.getElementById('start-simulation').addEventListener('click', function() {
+      if (!state.running) {
+        state.running = true;
+        state.lastTime = performance.now();
+        requestAnimationFrame(updateSimulation);
+        log('Simulation started', 'success');
+      }
+    });
+    
+    // Stop simulation button
+    document.getElementById('stop-simulation').addEventListener('click', function() {
+      state.running = false;
+      log('Simulation stopped', 'warning');
+    });
+    
+    // Add ants button
+    document.getElementById('add-ants').addEventListener('click', function() {
+      for (let i = 0; i < 10; i++) {
+        const type = Math.random() < 0.3 ? 'scout' : 'worker';
+        state.ants.push(new Ant(type, state.queen));
+      }
+      
+      updateStats();
+      log(`Added 10 ants. Total: ${state.ants.length}`, 'info');
+    });
+    
+    // Add food button
+    document.getElementById('add-food').addEventListener('click', function() {
+      const x = Math.random() * (state.canvas.width - 30) + 15;
+      const y = Math.random() * (state.canvas.height - 100) + 15;
+      state.food.push(new Food(x, y));
+      
+      updateStats();
+      log(`Added food. Total: ${state.food.length}`, 'info');
+    });
+    
+    // Clear all button
+    document.getElementById('clear-all').addEventListener('click', function() {
+      state.ants = [];
+      state.food = [];
+      
+      // Reinitialize
+      initSimulation();
+      
+      log('Cleared all and reinitialized', 'warning');
+    });
+    
+    // Toggle performance monitor
+    document.getElementById('toggle-performance').addEventListener('click', function() {
+      const monitor = document.getElementById('performance-monitor');
+      monitor.style.display = monitor.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Initialize on page load
+    window.addEventListener('load', function() {
+      initSimulation();
+      log('Page loaded', 'info');
+    });
+    
+    // Add global error handler
+    window.addEventListener('error', function(event) {
+      log(`Error: ${event.message}`, 'error');
+      console.error('Global error:', event.error);
+    });
+    
+    // Add a watchdog timer to detect freezes
+    let lastFrameTime = performance.now();
+    
+    // Update last frame time in animation loop
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    window.requestAnimationFrame = function(callback) {
+      return originalRequestAnimationFrame(function(timestamp) {
+        lastFrameTime = performance.now();
+        callback(timestamp);
+      });
+    };
+    
+    // Check for freezes every second
+    setInterval(function() {
+      const now = performance.now();
+      const timeSinceLastFrame = now - lastFrameTime;
+      
+      // If more than 5 seconds have passed since the last frame, the simulation might be frozen
+      if (state.running && timeSinceLastFrame > 5000) {
+        log(`Possible freeze detected: ${(timeSinceLastFrame / 1000).toFixed(1)} seconds since last frame`, 'error');
+        
+        // Try to recover by reducing ant count
+        if (state.ants.length > 20) {
+          const originalCount = state.ants.length;
+          state.ants.length = 20;
+          log(`Reduced ant count from ${originalCount} to 20 to recover from freeze`, 'warning');
+        }
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

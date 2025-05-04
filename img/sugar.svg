@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Sugar</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1" x="4" y="4" width="16" height="16" rx="2"></rect>
+        <circle fill="#F5F5F5" cx="8" cy="8" r="1"></circle>
+        <circle fill="#F5F5F5" cx="12" cy="12" r="1"></circle>
+        <circle fill="#F5F5F5" cx="16" cy="16" r="1"></circle>
+        <circle fill="#F5F5F5" cx="8" cy="16" r="1"></circle>
+        <circle fill="#F5F5F5" cx="16" cy="8" r="1"></circle>
+    </g>
+</svg>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="60px" height="20px" viewBox="0 0 60 20" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Stick</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M5,12 C10,8 20,10 30,10 C40,10 50,8 55,12 C55,14 50,16 30,16 C10,16 5,14 5,12 Z" fill="#8B4513" stroke="#5D2906" stroke-width="1"></path>
+        <path d="M10,10 C15,8 25,8 30,8 C35,8 45,8 50,10 C50,12 45,14 30,14 C15,14 10,12 10,10 Z" fill="#A0522D"></path>
+    </g>
+</svg>

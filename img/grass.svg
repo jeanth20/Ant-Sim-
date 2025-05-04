@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="50px" height="50px" viewBox="0 0 50 50" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Grass</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#7CFC00" x="0" y="0" width="50" height="50"></rect>
+        
+        <!-- Grass blades -->
+        <path d="M5,25 L5,15 L8,20 L10,10 L12,20 L15,15 L15,25" fill="#66CC00"></path>
+        <path d="M20,25 L20,15 L23,20 L25,10 L27,20 L30,15 L30,25" fill="#66CC00"></path>
+        <path d="M35,25 L35,15 L38,20 L40,10 L42,20 L45,15 L45,25" fill="#66CC00"></path>
+        
+        <path d="M10,45 L10,35 L13,40 L15,30 L17,40 L20,35 L20,45" fill="#66CC00"></path>
+        <path d="M25,45 L25,35 L28,40 L30,30 L32,40 L35,35 L35,45" fill="#66CC00"></path>
+    </g>
+</svg>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Rain</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Cloud -->
+        <path d="M32,15 C32,10 28,6 23,6 C18,6 14,10 14,15 C14,15 14,15 14,15 C10,15 7,18 7,22 C7,26 10,29 14,29 L30,29 C33,29 36,26 36,22 C36,18 33,15 30,15 L32,15 Z" fill="#CCCCCC"></path>
+        
+        <!-- Rain drops -->
+        <path d="M14,32 L12,36" stroke="#6699CC" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M20,32 L18,36" stroke="#6699CC" stroke-width="2" stroke-linecap="round"></path>
+        <path d="M26,32 L24,36" stroke="#6699CC" stroke-width="2" stroke-linecap="round"></path>
+    </g>
+</svg>

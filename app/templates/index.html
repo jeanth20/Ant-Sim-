@@ -1,0 +1,1904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ant Hole Simulation</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 220px; /* Adjusted to account for sidebar */
+      background: #222;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 20px;
+      transition: background 0.3s;
+      z-index: 10;
+    }
+    canvas {
+      display: block;
+    }
+    #sidebar {
+      width: 200px;
+      background: #222;
+      height: 100vh;
+      padding: 10px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .food-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #333;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .food-item:hover {
+      background: #444;
+    }
+    .food-item.selected {
+      background: #555;
+      border: 2px solid #888;
+    }
+    .food-item img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    .food-item-name {
+      font-size: 16px;
+      display: block;
+    }
+    .food-item-props {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 3px;
+    }
+    .sidebar-title {
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #444;
+    }
+    #game-container {
+      flex: 1;
+      position: relative;
+    }
+    #ant-stats {
+      margin-top: 30px;
+      padding: 15px;
+      background: #333;
+      border-radius: 5px;
+    }
+    #ant-stats h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 18px;
+    }
+    #ant-stats div {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    #obstacles-section {
+      margin-top: 30px;
+      padding: 15px;
+      background: #333;
+      border-radius: 5px;
+    }
+    #obstacles-section h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 18px;
+    }
+    .obstacle-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #444;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .obstacle-item:hover {
+      background: #555;
+    }
+    .obstacle-item.selected {
+      background: #666;
+      border: 2px solid #888;
+    }
+    .obstacle-item img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    .obstacle-item-name {
+      font-size: 16px;
+    }
+    #tools-section {
+      margin-top: 30px;
+      padding: 15px;
+      background: #333;
+      border-radius: 5px;
+    }
+    #tools-section h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 18px;
+    }
+    .tool-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #444;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .tool-item:hover {
+      background: #555;
+    }
+    .tool-item.selected {
+      background: #666;
+      border: 2px solid #888;
+    }
+    .tool-item img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+    .tool-item-name {
+      font-size: 16px;
+      display: block;
+    }
+    .tool-item-desc {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 3px;
+    }
+    .decay-bar {
+      height: 3px;
+      background: #f44336;
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      transition: width 0.5s linear;
+    }
+    .ants-needed {
+      position: absolute;
+      top: -15px;
+      right: -5px;
+      background: #333;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    /* Magnifying glass cursor */
+    .magnifying-cursor {
+      cursor: none !important;
+    }
+
+    #magnifying-glass {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      pointer-events: none;
+      z-index: 1000;
+      transform: translate(-50%, -50%);
+      display: none;
+    }
+
+    #magnifying-glass img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .burning-effect {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,0,0,0.7) 0%, rgba(255,165,0,0.5) 70%, rgba(255,255,0,0.3) 100%);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 999;
+      animation: pulse 0.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: translate(-50%, -50%) scale(0.8); }
+      to { transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    /* Notification styles */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 5px;
+      z-index: 2000;
+      transform: translateX(120%);
+      transition: transform 0.3s ease-out;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    /* Game controls */
+    #game-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    /* Performance monitor */
+    #performance-monitor {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 100;
+      font-family: monospace;
+    }
+
+    .game-button {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      font-size: 14px;
+    }
+
+    .game-button:hover {
+      background: #444;
+      transform: translateY(-2px);
+    }
+
+    .game-button:active {
+      transform: translateY(0);
+    }
+
+    /* Settings panel */
+    #settings-panel {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 5px;
+      z-index: 200;
+      width: 250px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    #settings-panel h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      text-align: center;
+      color: white;
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .settings-row label {
+      flex: 1;
+    }
+
+    .settings-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
+
+    .settings-row input[type="range"] {
+      width: 100px;
+    }
+
+    #close-settings {
+      display: block;
+      margin: 15px auto 0;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h2 class="sidebar-title">Food Items</h2>
+    <div class="food-item selected" data-type="apple" data-decay="15" data-ants="2">
+      <img src="/img/apple.svg" alt="Apple">
+      <div>
+        <span class="food-item-name">Apple Crumb</span>
+        <div class="food-item-props">Decay: 15s | Ants: 2</div>
+      </div>
+    </div>
+    <div class="food-item" data-type="bread" data-decay="100" data-ants="3">
+      <img src="/img/bread.svg" alt="Bread">
+      <div>
+        <span class="food-item-name">Bread Crumb</span>
+        <div class="food-item-props">Decay: 100s | Ants: 3</div>
+      </div>
+    </div>
+    <div class="food-item" data-type="cheese" data-decay="10" data-ants="4">
+      <img src="/img/cheese.svg" alt="Cheese">
+      <div>
+        <span class="food-item-name">Cheese Crumb</span>
+        <div class="food-item-props">Decay: 10s | Ants: 4</div>
+      </div>
+    </div>
+    <div class="food-item" data-type="sugar" data-decay="30" data-ants="1">
+      <img src="/img/sugar.svg" alt="Sugar">
+      <div>
+        <span class="food-item-name">Sugar Cube</span>
+        <div class="food-item-props">Decay: 30s | Ants: 1</div>
+      </div>
+    </div>
+
+    <div id="obstacles-section">
+      <h3>Obstacles</h3>
+      <div class="obstacle-item" data-type="rock">
+        <img src="/img/rock.svg" alt="Rock">
+        <span class="obstacle-item-name">Rock</span>
+      </div>
+      <div class="obstacle-item" data-type="stick">
+        <img src="/img/stick.svg" alt="Stick">
+        <span class="obstacle-item-name">Stick</span>
+      </div>
+      <div class="obstacle-item" data-type="leaf">
+        <img src="/img/leaf.svg" alt="Leaf">
+        <span class="obstacle-item-name">Leaf</span>
+      </div>
+    </div>
+
+    <div id="tools-section">
+      <h3>Tools</h3>
+      <div class="tool-item" data-type="magnifying-glass">
+        <img src="/img/magnifying-glass.svg" alt="Magnifying Glass">
+        <div>
+          <span class="tool-item-name">Magnifying Glass</span>
+          <div class="tool-item-desc">Hover over ants to burn them</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ant-stats">
+      <h3>Colony Stats</h3>
+      <div id="ant-count">Ants: 10</div>
+      <div id="scout-count">Scouts: 3</div>
+      <div id="worker-count">Workers: 7</div>
+    </div>
+
+  </div>
+
+  <div id="game-container">
+    <div id="score">Score: 0</div>
+    <div id="game-controls">
+      <button class="game-button" id="save-button">Save Game</button>
+      <button class="game-button" id="load-button">Load Game</button>
+      <button class="game-button" id="reset-button">Reset Game</button>
+      <button class="game-button" id="settings-button">Performance</button>
+    </div>
+
+    <div id="settings-panel" style="display: none;">
+      <h3>Performance Settings</h3>
+      <div class="settings-row">
+        <label for="setting-cull">Cull Off-screen:</label>
+        <input type="checkbox" id="setting-cull" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-spatial">Spatial Partitioning:</label>
+        <input type="checkbox" id="setting-spatial" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-optimize">Optimize Rendering:</label>
+        <input type="checkbox" id="setting-optimize" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-frameskip">Frame Skipping:</label>
+        <input type="checkbox" id="setting-frameskip" checked>
+      </div>
+      <div class="settings-row">
+        <label for="setting-antcount">Max Ants:</label>
+        <input type="range" id="setting-antcount" min="10" max="200" value="100">
+        <span id="antcount-value">100</span>
+      </div>
+      <button class="game-button" id="close-settings">Close</button>
+    </div>
+    <canvas id="antCanvas"></canvas>
+    <div id="magnifying-glass">
+      <img src="/img/magnifying-glass.svg" alt="Magnifying Glass">
+    </div>
+    <div id="performance-monitor">FPS: 0 | Ants: 0 | Food: 0 | Obstacles: 0</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('antCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const gameContainer = document.getElementById('game-container');
+    canvas.width = gameContainer.clientWidth;
+    canvas.height = window.innerHeight;
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      canvas.width = gameContainer.clientWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Track mouse position for hover effects
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    canvas.addEventListener('mousemove', (e) => {
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+
+      // Update magnifying glass position if active
+      if (magnifyingActive) {
+        updateMagnifyingGlassPosition(e);
+      }
+    });
+
+    // Magnifying glass functions
+    function activateMagnifyingGlass() {
+      magnifyingActive = true;
+      gameContainer.classList.add('magnifying-cursor');
+      magnifyingGlassElement.style.display = 'block';
+
+      // Position it initially
+      updateMagnifyingGlassPosition({ clientX: lastMouseX, clientY: lastMouseY });
+    }
+
+    function deactivateMagnifyingGlass() {
+      magnifyingActive = false;
+      gameContainer.classList.remove('magnifying-cursor');
+      magnifyingGlassElement.style.display = 'none';
+      magnifyingHoverTime = 0;
+      magnifyingHoverAnt = null;
+
+      // Remove any burning effects
+      removeBurningEffects();
+    }
+
+    function updateMagnifyingGlassPosition(e) {
+      magnifyingGlassElement.style.left = e.clientX + 'px';
+      magnifyingGlassElement.style.top = e.clientY + 'px';
+    }
+
+    function findAntUnderMagnifyingGlass() {
+      const rect = canvas.getBoundingClientRect();
+      const x = lastMouseX - rect.left;
+      const y = lastMouseY - rect.top;
+
+      // Check if any ant is under the magnifying glass
+      for (let i = 0; i < ants.length; i++) {
+        const ant = ants[i];
+        const distance = Math.hypot(ant.x - x, ant.y - y);
+
+        // If ant is within 30px of the magnifying glass center
+        if (distance < 30) {
+          return { ant, index: i };
+        }
+      }
+
+      return null;
+    }
+
+    function createBurningEffect(x, y) {
+      const burningEffect = document.createElement('div');
+      burningEffect.className = 'burning-effect';
+      burningEffect.style.left = x + 'px';
+      burningEffect.style.top = y + 'px';
+      gameContainer.appendChild(burningEffect);
+
+      burningEffects.push(burningEffect);
+
+      // Remove the effect after 1 second
+      setTimeout(() => {
+        if (burningEffect.parentNode) {
+          burningEffect.parentNode.removeChild(burningEffect);
+        }
+        burningEffects = burningEffects.filter(effect => effect !== burningEffect);
+      }, 1000);
+    }
+
+    function removeBurningEffects() {
+      burningEffects.forEach(effect => {
+        if (effect.parentNode) {
+          effect.parentNode.removeChild(effect);
+        }
+      });
+      burningEffects = [];
+    }
+
+    // Food selection
+    const foodItems = document.querySelectorAll('.food-item');
+    let selectedFoodType = 'apple';
+    let selectedFoodDecay = 15;
+    let selectedFoodAnts = 2;
+
+    // Food properties by type
+    const foodProperties = {
+      apple: { decay: 15, antsNeeded: 2 },
+      bread: { decay: 30, antsNeeded: 3 },
+      cheese: { decay: 20, antsNeeded: 4 },
+      sugar: { decay: 10, antsNeeded: 1 }
+    };
+
+    // Obstacle selection
+    const obstacleItems = document.querySelectorAll('.obstacle-item');
+    let selectedObstacleType = null;
+    let placingObstacle = false;
+
+    // Tool selection
+    const toolItems = document.querySelectorAll('.tool-item');
+    let selectedTool = null;
+
+    // Mode tracking
+    let currentMode = 'food'; // 'food', 'obstacle', 'tool', or 'remove'
+
+    // Magnifying glass elements
+    const magnifyingGlassElement = document.getElementById('magnifying-glass');
+    let magnifyingActive = false;
+    let magnifyingHoverTime = 0;
+    let magnifyingHoverAnt = null;
+    let burningEffects = [];
+
+    // Function to deselect all items
+    function deselectAllItems() {
+      foodItems.forEach(i => i.classList.remove('selected'));
+      obstacleItems.forEach(i => i.classList.remove('selected'));
+      toolItems.forEach(i => i.classList.remove('selected'));
+
+      // Reset magnifying glass
+      if (magnifyingActive) {
+        deactivateMagnifyingGlass();
+      }
+    }
+
+    foodItems.forEach(item => {
+      item.addEventListener('click', () => {
+        // Deselect all items
+        deselectAllItems();
+
+        // Select this food item
+        item.classList.add('selected');
+        selectedFoodType = item.getAttribute('data-type');
+        selectedFoodDecay = parseInt(item.getAttribute('data-decay'));
+        selectedFoodAnts = parseInt(item.getAttribute('data-ants'));
+
+        // Set mode to food placement
+        currentMode = 'food';
+        placingObstacle = false;
+        selectedTool = null;
+      });
+    });
+
+    obstacleItems.forEach(item => {
+      item.addEventListener('click', () => {
+        // Deselect all items
+        deselectAllItems();
+
+        // Select this obstacle item
+        item.classList.add('selected');
+        selectedObstacleType = item.getAttribute('data-type');
+
+        // Set mode to obstacle placement
+        currentMode = 'obstacle';
+        placingObstacle = true;
+        selectedTool = null;
+      });
+    });
+
+    toolItems.forEach(item => {
+      item.addEventListener('click', () => {
+        // Deselect all items
+        deselectAllItems();
+
+        // Select this tool item
+        item.classList.add('selected');
+        selectedTool = item.getAttribute('data-type');
+
+        // Set mode to tool usage
+        currentMode = 'tool';
+        placingObstacle = false;
+
+        // If it's the magnifying glass, activate it
+        if (selectedTool === 'magnifying-glass') {
+          activateMagnifyingGlass();
+        }
+      });
+    });
+
+    // Load images
+    const antImage = new Image();
+    antImage.src = '/img/better-ant.svg';
+
+    // Load background image
+    const backgroundImage = new Image();
+    backgroundImage.src = '/img/plainsidewalk.jpg';
+
+    const foodImages = {
+      apple: new Image(),
+      bread: new Image(),
+      cheese: new Image(),
+      sugar: new Image()
+    };
+
+    foodImages.apple.src = '/img/apple.svg';
+    foodImages.bread.src = '/img/bread.svg';
+    foodImages.cheese.src = '/img/cheese.svg';
+    foodImages.sugar.src = '/img/sugar.svg';
+
+    // Load obstacle images
+    const obstacleImages = {
+      rock: new Image(),
+      stick: new Image(),
+      leaf: new Image()
+    };
+
+    obstacleImages.rock.src = '/img/rock.svg';
+    obstacleImages.stick.src = '/img/stick.svg';
+    obstacleImages.leaf.src = '/img/leaf.svg';
+
+    // Load tool images
+    const toolImages = {
+      magnifyingGlass: new Image()
+    };
+
+    toolImages.magnifyingGlass.src = '/img/magnifying-glass.svg';
+
+    // Stats elements
+    const antCountElement = document.getElementById('ant-count');
+    const scoutCountElement = document.getElementById('scout-count');
+    const workerCountElement = document.getElementById('worker-count');
+
+    const ants = [];
+    const food = [];
+    const obstacles = [];
+    const queen = { x: canvas.width / 2, y: canvas.height - 50 };
+    let score = 0;
+    let lastAntAddedScore = 0;
+
+    // Track ant types
+    let scoutCount = 3;
+    let workerCount = 7;
+
+    // Update stats display
+    function updateStats() {
+      antCountElement.textContent = `Ants: ${ants.length}`;
+      scoutCountElement.textContent = `Scouts: ${scoutCount}`;
+      workerCountElement.textContent = `Workers: ${workerCount}`;
+    }
+
+    class Ant {
+      constructor(type = 'worker') {
+        this.x = queen.x + Math.random() * 50 - 25;
+        this.y = queen.y + Math.random() * 50 - 25;
+        this.type = type; // 'scout' or 'worker'
+        this.speed = type === 'scout' ? 1.8 : 1.2; // Scouts are faster
+        this.target = null;
+        this.carrying = false;
+        this.assignedFood = null;
+        this.assignedWorkers = [];
+        this.followingScout = null;
+      }
+
+      update() {
+        if (this.type === 'scout') {
+          this.updateScout();
+        } else {
+          this.updateWorker();
+        }
+      }
+
+      updateScout() {
+        if (this.assignedFood) {
+          // Scout is leading workers to food
+          this.moveToward(this.assignedFood);
+
+          // If the food is gone or fully assigned, go back to searching
+          if (!food.includes(this.assignedFood) ||
+              this.assignedFood.assignedAnts >= this.assignedFood.antsNeeded) {
+            this.assignedFood = null;
+            this.assignedWorkers = [];
+            this.target = null;
+          }
+        } else if (!this.carrying) {
+          // Scout looking for food
+          if (!this.target || !food.includes(this.target)) {
+            // Find food that doesn't have enough ants assigned yet
+            const availableFood = food.filter(f =>
+              !f.assignedAnts || f.assignedAnts < f.antsNeeded);
+
+            if (availableFood.length > 0) {
+              this.target = availableFood.sort((a, b) =>
+                this.distance(a) - this.distance(b))[0];
+            } else {
+              this.target = null;
+            }
+          }
+
+          if (this.target) {
+            this.moveToward(this.target);
+            if (this.distance(this.target) < 15) {
+              // Found food, assign it to this scout
+              this.assignedFood = this.target;
+
+              // If food only needs one ant, collect it directly
+              if (this.assignedFood.antsNeeded === 1) {
+                this.carrying = true;
+                this.assignedFood.assignedAnts = 1;
+                this.target = { x: queen.x, y: queen.y };
+              } else {
+                // Otherwise, recruit workers
+                this.assignedFood.assignedAnts = this.assignedFood.assignedAnts || 0;
+              }
+            }
+          } else {
+            this.wander();
+          }
+        } else {
+          // Scout carrying food back to queen
+          this.moveToward(this.target); // target is queen
+          if (this.distance(this.target) < 10) {
+            score++;
+            flashScore('green');
+            this.carrying = false;
+
+            // Remove the food from the array
+            const foodIndex = food.indexOf(this.assignedFood);
+            if (foodIndex !== -1) {
+              food.splice(foodIndex, 1);
+            }
+
+            this.assignedFood = null;
+            this.target = null;
+          }
+        }
+      }
+
+      updateWorker() {
+        if (this.followingScout) {
+          // Worker following a scout to food
+          this.moveToward(this.followingScout);
+
+          // If we reached the food or the scout no longer has assigned food
+          if (this.followingScout.assignedFood &&
+              this.distance(this.followingScout.assignedFood) < 10) {
+            // Start collecting the food
+            this.target = this.followingScout.assignedFood;
+            this.followingScout = null;
+
+            // Increment assigned ants count
+            this.target.assignedAnts = (this.target.assignedAnts || 0) + 1;
+
+            // If we have enough ants, start carrying
+            if (this.target.assignedAnts >= this.target.antsNeeded) {
+              this.carrying = true;
+              this.target = { x: queen.x, y: queen.y };
+            }
+          } else if (!this.followingScout.assignedFood) {
+            // Scout no longer has assigned food, stop following
+            this.followingScout = null;
+            this.target = null;
+          }
+        } else if (!this.carrying) {
+          // Worker looking for a scout to follow or food to collect
+          if (!this.target) {
+            // Look for a scout with assigned food that needs workers
+            const availableScouts = ants.filter(a =>
+              a.type === 'scout' &&
+              a.assignedFood &&
+              (a.assignedFood.assignedAnts || 0) < a.assignedFood.antsNeeded &&
+              a.assignedWorkers.length < a.assignedFood.antsNeeded - (a.assignedFood.assignedAnts || 0)
+            );
+
+            if (availableScouts.length > 0) {
+              // Follow the nearest scout
+              this.followingScout = availableScouts.sort((a, b) =>
+                this.distance(a) - this.distance(b))[0];
+
+              // Add this worker to the scout's assigned workers
+              this.followingScout.assignedWorkers.push(this);
+            } else {
+              // No scouts to follow, wander around
+              this.wander();
+            }
+          }
+        } else {
+          // Worker carrying food back to queen
+          this.moveToward(this.target); // target is queen
+          if (this.distance(this.target) < 10) {
+            score++;
+            flashScore('green');
+            this.carrying = false;
+
+            // If this was the last ant carrying this food, remove it
+            if (this.target !== queen) {
+              const foodIndex = food.indexOf(this.target);
+              if (foodIndex !== -1) {
+                food.splice(foodIndex, 1);
+              }
+            }
+
+            this.target = null;
+          }
+        }
+      }
+
+      moveToward(target) {
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        // If we're already very close to the target, just arrive there
+        if (dist < 0.1) {
+          this.x = target.x;
+          this.y = target.y;
+          return;
+        }
+
+        // Calculate the next position
+        let nextX = this.x + (dx / dist) * this.speed;
+        let nextY = this.y + (dy / dist) * this.speed;
+
+        // Check if the next position would be inside an obstacle
+        let obstacleAvoidance = { x: 0, y: 0 };
+
+        // Use spatial partitioning to only check nearby obstacles
+        let nearbyObstacles;
+        if (settings.useSpatialPartitioning) {
+          // Get obstacles within a certain radius
+          nearbyObstacles = getNearbyObjects(this.x, this.y, 50)
+            .filter(obj => obstacles.includes(obj));
+        } else {
+          nearbyObstacles = obstacles;
+        }
+
+        // Limit the number of obstacles we check for performance
+        const maxObstaclesToCheck = 5;
+        if (nearbyObstacles.length > maxObstaclesToCheck) {
+          // Sort by distance and take the closest ones
+          nearbyObstacles = nearbyObstacles
+            .sort((a, b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y))
+            .slice(0, maxObstaclesToCheck);
+        }
+
+        for (const obstacle of nearbyObstacles) {
+          // Check if we're too close to an obstacle
+          const obstacleX = obstacle.x;
+          const obstacleY = obstacle.y;
+          const obstacleRadius = obstacle.type === 'stick' ? 15 : 20;
+
+          const distToObstacle = Math.hypot(nextX - obstacleX, nextY - obstacleY);
+
+          if (distToObstacle < obstacleRadius + 5) { // Add a small buffer
+            // Calculate avoidance vector (away from obstacle)
+            const avoidX = nextX - obstacleX;
+            const avoidY = nextY - obstacleY;
+            const avoidDist = Math.max(0.1, Math.hypot(avoidX, avoidY));
+
+            // Add to total avoidance (weighted by how close we are)
+            const weight = 1.0 - Math.min(1.0, distToObstacle / (obstacleRadius + 5));
+            obstacleAvoidance.x += (avoidX / avoidDist) * weight * 2;
+            obstacleAvoidance.y += (avoidY / avoidDist) * weight * 2;
+          }
+        }
+
+        // Apply obstacle avoidance to movement
+        const avoidMagnitude = Math.hypot(obstacleAvoidance.x, obstacleAvoidance.y);
+        if (avoidMagnitude > 0) {
+          // Blend between target direction and avoidance
+          const blendFactor = Math.min(1.0, avoidMagnitude / 2);
+          nextX = this.x + (dx / dist) * this.speed * (1 - blendFactor) +
+                  obstacleAvoidance.x * blendFactor;
+          nextY = this.y + (dy / dist) * this.speed * (1 - blendFactor) +
+                  obstacleAvoidance.y * blendFactor;
+        }
+
+        this.x = nextX;
+        this.y = nextY;
+      }
+
+      wander() {
+        this.x += Math.random() * 2 - 1;
+        this.y += Math.random() * 2 - 1;
+      }
+
+      distance(obj) {
+        return Math.hypot(this.x - obj.x, this.y - obj.y);
+      }
+
+      draw() {
+        ctx.save();
+        const size = this.type === 'scout' ? 30 : 24; // Scouts are bigger
+
+        // Rotate in the direction of movement if the ant has a target
+        if (this.target || this.followingScout || this.assignedFood) {
+          let dx, dy;
+
+          if (this.target) {
+            dx = this.target.x - this.x;
+            dy = this.target.y - this.y;
+          } else if (this.followingScout) {
+            dx = this.followingScout.x - this.x;
+            dy = this.followingScout.y - this.y;
+          } else {
+            dx = this.assignedFood.x - this.x;
+            dy = this.assignedFood.y - this.y;
+          }
+
+          const angle = Math.atan2(dy, dx);
+
+          ctx.translate(this.x, this.y);
+          ctx.rotate(angle);
+          ctx.translate(-size/2, -size/2);
+
+          // Draw the ant image with color tint based on type
+          ctx.drawImage(antImage, 0, 0, size, size);
+
+          // Add color overlay for scout/worker
+          ctx.globalCompositeOperation = 'source-atop';
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = this.type === 'scout' ? '#ff0' : '#fff';
+          ctx.fillRect(0, 0, size, size);
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = 'source-over';
+
+          // If carrying food, show a small colored dot and the food being carried
+          if (this.carrying) {
+            // Draw a small version of the food being carried
+            if (this.target && this.target !== queen) {
+              const foodType = this.assignedFood ? this.assignedFood.type : 'apple';
+              const foodImage = foodImages[foodType];
+              const foodSize = 12;
+              ctx.drawImage(foodImage, size/2 - foodSize/2, -foodSize - 2, foodSize, foodSize);
+            } else {
+              // Just show a colored dot if we don't know what food
+              ctx.fillStyle = '#f0f';
+              ctx.beginPath();
+              ctx.arc(size/2, -5, 5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // If scout with assigned food, show a beacon
+          if (this.type === 'scout' && this.assignedFood) {
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw a pulsing ring
+            const pulseSize = (Math.sin(Date.now() * 0.005) * 0.5 + 1.5) * size;
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, pulseSize, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        } else {
+          // If no target, just draw the ant without rotation
+          ctx.drawImage(antImage, this.x - size/2, this.y - size/2, size, size);
+
+          // Add color overlay for scout/worker
+          ctx.globalCompositeOperation = 'source-atop';
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = this.type === 'scout' ? '#ff0' : '#fff';
+          ctx.fillRect(this.x - size/2, this.y - size/2, size, size);
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function flashScore(color) {
+      scoreDisplay.style.background = color;
+      scoreDisplay.textContent = `Score: ${score}`;
+      setTimeout(() => {
+        scoreDisplay.style.background = '#222';
+      }, 200);
+    }
+
+    // Initialize ants with proper types
+    initializeAnts();
+
+    // Function to check if a point is inside an obstacle
+    function isPointInObstacle(x, y, obstacle) {
+      // Different hit detection based on obstacle type
+      if (obstacle.type === 'rock') {
+        const dx = x - obstacle.x;
+        const dy = y - obstacle.y;
+        return Math.sqrt(dx * dx + dy * dy) < 20; // Rock radius
+      } else if (obstacle.type === 'stick') {
+        // For stick, check if point is within rectangle
+        return x >= obstacle.x - 30 && x <= obstacle.x + 30 &&
+               y >= obstacle.y - 10 && y <= obstacle.y + 10;
+      } else if (obstacle.type === 'leaf') {
+        // For leaf, check if point is within circle
+        const dx = x - obstacle.x;
+        const dy = y - obstacle.y;
+        return Math.sqrt(dx * dx + dy * dy) < 20; // Leaf radius
+      }
+      return false;
+    }
+
+    // Function to find obstacle at position
+    function findObstacleAt(x, y) {
+      for (let i = 0; i < obstacles.length; i++) {
+        if (isPointInObstacle(x, y, obstacles[i])) {
+          return { obstacle: obstacles[i], index: i };
+        }
+      }
+      return null;
+    }
+
+    canvas.addEventListener('click', (e) => {
+      // Calculate position relative to the canvas
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Check if we're clicking on an existing obstacle (for removal)
+      const obstacleFound = findObstacleAt(x, y);
+
+      if (obstacleFound && currentMode === 'obstacle') {
+        // Remove the obstacle if we're in obstacle mode and clicked on one
+        obstacles.splice(obstacleFound.index, 1);
+        return;
+      }
+
+      // If we're in food placement mode
+      if (currentMode === 'food') {
+        // Check if the position is not occupied by an obstacle
+        if (!findObstacleAt(x, y)) {
+          // Add the selected food type with decay timer and ants needed
+          food.push({
+            x: x,
+            y: y,
+            type: selectedFoodType,
+            decayTime: selectedFoodDecay,
+            decayTimer: selectedFoodDecay,
+            antsNeeded: selectedFoodAnts,
+            assignedAnts: 0
+          });
+        }
+      }
+      // If we're in obstacle placement mode
+      else if (currentMode === 'obstacle') {
+        // Add the selected obstacle type
+        obstacles.push({
+          x: x,
+          y: y,
+          type: selectedObstacleType
+        });
+      }
+    });
+
+    function drawQueen() {
+      ctx.fillStyle = '#ff7700';
+      ctx.beginPath();
+      ctx.arc(queen.x, queen.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawFood() {
+      food.forEach(f => {
+        const foodImage = foodImages[f.type];
+        const size = 30; // Increased food size
+
+        ctx.save();
+
+        // Draw the food image
+        ctx.drawImage(foodImage, f.x - size/2, f.y - size/2, size, size);
+
+        // Draw decay bar
+        const decayPercentage = f.decayTimer / f.decayTime;
+        const barWidth = size * decayPercentage;
+
+        ctx.fillStyle = decayPercentage > 0.6 ? '#4CAF50' :
+                        decayPercentage > 0.3 ? '#FFC107' : '#F44336';
+        ctx.fillRect(f.x - size/2, f.y + size/2 + 2, barWidth, 3);
+
+        // Draw ants needed indicator
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(f.x + size/2, f.y - size/2, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(f.antsNeeded, f.x + size/2, f.y - size/2);
+
+        // If ants are assigned, show progress
+        if (f.assignedAnts > 0) {
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, size * 1.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fff';
+          ctx.font = '10px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${f.assignedAnts}/${f.antsNeeded}`, f.x, f.y + size/2 + 10);
+        }
+
+        ctx.restore();
+      });
+    }
+
+    // Draw a single obstacle (for optimization)
+    function drawObstacle(o) {
+      const obstacleImage = obstacleImages[o.type];
+
+      ctx.save();
+
+      // Draw the obstacle image with appropriate size based on type
+      if (o.type === 'rock') {
+        ctx.drawImage(obstacleImage, o.x - 20, o.y - 15, 40, 30);
+      } else if (o.type === 'stick') {
+        ctx.drawImage(obstacleImage, o.x - 30, o.y - 10, 60, 20);
+      } else if (o.type === 'leaf') {
+        ctx.drawImage(obstacleImage, o.x - 20, o.y - 20, 40, 40);
+      }
+
+      // Add a subtle highlight when hovering
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = lastMouseX - rect.left;
+      const mouseY = lastMouseY - rect.top;
+
+      if (isPointInObstacle(mouseX, mouseY, o) && currentMode === 'obstacle') {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        if (o.type === 'rock' || o.type === 'leaf') {
+          ctx.arc(o.x, o.y, 20, 0, Math.PI * 2);
+        } else {
+          ctx.rect(o.x - 30, o.y - 10, 60, 20);
+        }
+        ctx.fill();
+
+        // Show "click to remove" text
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Click to remove', o.x, o.y - 30);
+      }
+
+      ctx.restore();
+    }
+
+    // Draw all obstacles
+    function drawObstacles() {
+      obstacles.forEach(drawObstacle);
+    }
+
+    // Draw a single food item (for optimization)
+    function drawFoodItem(f) {
+      const foodImage = foodImages[f.type];
+      const size = 30; // Increased food size
+
+      ctx.save();
+
+      // Draw the food image
+      ctx.drawImage(foodImage, f.x - size/2, f.y - size/2, size, size);
+
+      // Draw decay bar
+      const decayPercentage = f.decayTimer / f.decayTime;
+      const barWidth = size * decayPercentage;
+
+      ctx.fillStyle = decayPercentage > 0.6 ? '#4CAF50' :
+                      decayPercentage > 0.3 ? '#FFC107' : '#F44336';
+      ctx.fillRect(f.x - size/2, f.y + size/2 + 2, barWidth, 3);
+
+      // Draw ants needed indicator
+      ctx.fillStyle = '#333';
+      ctx.beginPath();
+      ctx.arc(f.x + size/2, f.y - size/2, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(f.antsNeeded, f.x + size/2, f.y - size/2);
+
+      // If ants are assigned, show progress
+      if (f.assignedAnts > 0) {
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, size * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${f.assignedAnts}/${f.antsNeeded}`, f.x, f.y + size/2 + 10);
+      }
+
+      ctx.restore();
+    }
+
+    // Draw all food items
+    function drawFood() {
+      food.forEach(drawFoodItem);
+    }
+
+    // Initialize ants with proper types
+    function initializeAnts() {
+      // Clear existing ants
+      ants.length = 0;
+
+      // Create scout ants (30% of total)
+      for (let i = 0; i < scoutCount; i++) {
+        ants.push(new Ant('scout'));
+      }
+
+      // Create worker ants (70% of total)
+      for (let i = 0; i < workerCount; i++) {
+        ants.push(new Ant('worker'));
+      }
+
+      updateStats();
+    }
+
+    // Save game state to cookie
+    function saveGameState() {
+      const gameState = {
+        ants: ants.map(ant => ({
+          type: ant.type,
+          x: ant.x,
+          y: ant.y,
+          carrying: ant.carrying,
+          target: ant.target ? { x: ant.target.x, y: ant.target.y } : null,
+          assignedFood: ant.assignedFood ? {
+            x: ant.assignedFood.x,
+            y: ant.assignedFood.y,
+            type: ant.assignedFood.type,
+            antsNeeded: ant.assignedFood.antsNeeded,
+            assignedAnts: ant.assignedFood.assignedAnts
+          } : null
+        })),
+        food: food.map(f => ({
+          type: f.type,
+          x: f.x,
+          y: f.y,
+          decayTime: f.decayTime,
+          decayTimer: f.decayTimer,
+          antsNeeded: f.antsNeeded,
+          assignedAnts: f.assignedAnts || 0
+        })),
+        obstacles: obstacles.map(o => ({
+          type: o.type,
+          x: o.x,
+          y: o.y
+        })),
+        score: score,
+        scoutCount: scoutCount,
+        workerCount: workerCount
+      };
+
+      // Convert to JSON string and save to cookie
+      const gameStateStr = JSON.stringify(gameState);
+      document.cookie = `antSimulation=${encodeURIComponent(gameStateStr)}; max-age=604800; path=/`;
+
+      // Show save confirmation
+      showNotification('Game saved!');
+    }
+
+    // Load game state from cookie
+    function loadGameState() {
+      // Get the cookie
+      const cookies = document.cookie.split(';');
+      let gameStateStr = null;
+
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith('antSimulation=')) {
+          gameStateStr = decodeURIComponent(cookie.substring('antSimulation='.length));
+          break;
+        }
+      }
+
+      if (!gameStateStr) {
+        showNotification('No saved game found!');
+        return false;
+      }
+
+      try {
+        const gameState = JSON.parse(gameStateStr);
+
+        // Clear current state
+        ants.length = 0;
+        food.length = 0;
+        obstacles.length = 0;
+
+        // Restore score
+        score = gameState.score || 0;
+        scoutCount = gameState.scoutCount || 3;
+        workerCount = gameState.workerCount || 7;
+
+        // Restore obstacles
+        gameState.obstacles.forEach(o => {
+          obstacles.push({
+            type: o.type,
+            x: o.x,
+            y: o.y
+          });
+        });
+
+        // Restore food
+        gameState.food.forEach(f => {
+          food.push({
+            type: f.type,
+            x: f.x,
+            y: f.y,
+            decayTime: f.decayTime,
+            decayTimer: f.decayTimer,
+            antsNeeded: f.antsNeeded,
+            assignedAnts: f.assignedAnts || 0
+          });
+        });
+
+        // Restore ants
+        gameState.ants.forEach(a => {
+          const ant = new Ant(a.type);
+          ant.x = a.x;
+          ant.y = a.y;
+          ant.carrying = a.carrying;
+
+          if (a.target) {
+            // Check if target is queen
+            if (Math.hypot(a.target.x - queen.x, a.target.y - queen.y) < 10) {
+              ant.target = queen;
+            } else {
+              // Otherwise, find the closest food or create a new target
+              ant.target = { x: a.target.x, y: a.target.y };
+            }
+          }
+
+          if (a.assignedFood) {
+            // Try to find the actual food object
+            const matchingFood = food.find(f =>
+              Math.hypot(f.x - a.assignedFood.x, f.y - a.assignedFood.y) < 10);
+
+            if (matchingFood) {
+              ant.assignedFood = matchingFood;
+            }
+          }
+
+          ants.push(ant);
+        });
+
+        updateStats();
+        showNotification('Game loaded!');
+        return true;
+      } catch (e) {
+        console.error('Error loading game state:', e);
+        showNotification('Error loading game!');
+        return false;
+      }
+    }
+
+    // Show notification
+    function showNotification(message) {
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.classList.add('show');
+
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 500);
+        }, 2000);
+      }, 10);
+    }
+
+    // Add a new ant based on score
+    function addNewAnt() {
+      // Add a new ant every 10 points
+      if (score > 0 && score % 10 === 0 && score !== lastAntAddedScore) {
+        lastAntAddedScore = score;
+
+        // Decide whether to add a scout or worker (maintain roughly 30% scouts)
+        const currentScoutPercentage = scoutCount / (scoutCount + workerCount);
+
+        if (currentScoutPercentage < 0.3) {
+          // Add a scout
+          ants.push(new Ant('scout'));
+          scoutCount++;
+        } else {
+          // Add a worker
+          ants.push(new Ant('worker'));
+          workerCount++;
+        }
+
+        updateStats();
+        flashScore('#4CAF50'); // Green flash for new ant
+      }
+    }
+
+    // Handle food decay
+    function updateFoodDecay() {
+      // Decrease decay timer for each food item
+      for (let i = food.length - 1; i >= 0; i--) {
+        food[i].decayTimer -= 0.02; // Adjust speed of decay here
+
+        // Remove food if it has decayed completely
+        if (food[i].decayTimer <= 0) {
+          // If ants were assigned to this food, free them
+          ants.forEach(ant => {
+            if (ant.assignedFood === food[i]) {
+              ant.assignedFood = null;
+              ant.assignedWorkers = [];
+              ant.target = null;
+            }
+            if (ant.target === food[i]) {
+              ant.target = null;
+            }
+            if (ant.followingScout && ant.followingScout.assignedFood === food[i]) {
+              ant.followingScout = null;
+            }
+          });
+
+          food.splice(i, 1);
+        }
+      }
+    }
+
+    // Draw background
+    function drawBackground() {
+      // Check if the image is loaded
+      if (backgroundImage.complete) {
+        // Draw the background image, stretching it to fit the canvas
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+        // Add a semi-transparent overlay to darken the background slightly
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else {
+        // If image isn't loaded yet, use a solid color
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    // Performance monitoring variables
+    let lastTime = 0;
+    let frameCount = 0;
+    let lastFpsUpdate = 0;
+    let currentFps = 0;
+    let performanceMonitor = document.getElementById('performance-monitor');
+
+    // Optimization settings
+    const settings = {
+      targetFps: 60,
+      frameInterval: 1000 / 60, // Target 60 FPS
+      useFrameSkipping: true,
+      maxFrameSkip: 5,
+      useObjectPooling: true,
+      useSpatialPartitioning: true,
+      cullOffscreenObjects: true,
+      optimizeRendering: true,
+      drawDistance: 100, // Only draw ants within this distance of the viewport center
+      gridSize: 50, // Size of each grid cell for spatial partitioning
+    };
+
+    // Spatial grid for optimization
+    const spatialGrid = {};
+
+    // Function to update the spatial grid
+    function updateSpatialGrid() {
+      // Clear the grid
+      for (const key in spatialGrid) {
+        delete spatialGrid[key];
+      }
+
+      // Add ants to the grid
+      ants.forEach(ant => {
+        const gridX = Math.floor(ant.x / settings.gridSize);
+        const gridY = Math.floor(ant.y / settings.gridSize);
+        const key = `${gridX},${gridY}`;
+
+        if (!spatialGrid[key]) {
+          spatialGrid[key] = [];
+        }
+
+        spatialGrid[key].push(ant);
+      });
+
+      // Add food to the grid
+      food.forEach(f => {
+        const gridX = Math.floor(f.x / settings.gridSize);
+        const gridY = Math.floor(f.y / settings.gridSize);
+        const key = `${gridX},${gridY}`;
+
+        if (!spatialGrid[key]) {
+          spatialGrid[key] = [];
+        }
+
+        spatialGrid[key].push(f);
+      });
+
+      // Add obstacles to the grid
+      obstacles.forEach(o => {
+        const gridX = Math.floor(o.x / settings.gridSize);
+        const gridY = Math.floor(o.y / settings.gridSize);
+        const key = `${gridX},${gridY}`;
+
+        if (!spatialGrid[key]) {
+          spatialGrid[key] = [];
+        }
+
+        spatialGrid[key].push(o);
+      });
+    }
+
+    // Function to get nearby objects
+    function getNearbyObjects(x, y, radius) {
+      const result = [];
+      const gridRadius = Math.ceil(radius / settings.gridSize);
+      const centerGridX = Math.floor(x / settings.gridSize);
+      const centerGridY = Math.floor(y / settings.gridSize);
+
+      for (let gx = centerGridX - gridRadius; gx <= centerGridX + gridRadius; gx++) {
+        for (let gy = centerGridY - gridRadius; gy <= centerGridY + gridRadius; gy++) {
+          const key = `${gx},${gy}`;
+          if (spatialGrid[key]) {
+            result.push(...spatialGrid[key]);
+          }
+        }
+      }
+
+      return result;
+    }
+
+    // Function to check if an object is on screen
+    function isOnScreen(obj, buffer = 50) {
+      return obj.x >= -buffer &&
+             obj.x <= canvas.width + buffer &&
+             obj.y >= -buffer &&
+             obj.y <= canvas.height + buffer;
+    }
+
+    // Optimized animation loop
+    function animate(timestamp) {
+      // Calculate delta time for smooth animations
+      const deltaTime = Math.min(timestamp - lastTime, 100); // Cap at 100ms to prevent huge jumps
+      lastTime = timestamp;
+
+      // FPS calculation
+      frameCount++;
+      if (timestamp - lastFpsUpdate >= 1000) {
+        currentFps = Math.round((frameCount * 1000) / (timestamp - lastFpsUpdate));
+        frameCount = 0;
+        lastFpsUpdate = timestamp;
+
+        // Update performance monitor
+        performanceMonitor.textContent = `FPS: ${currentFps} | Ants: ${ants.length} | Food: ${food.length} | Obstacles: ${obstacles.length}`;
+      }
+
+      // Frame skipping for low FPS
+      if (settings.useFrameSkipping && currentFps < settings.targetFps / 2) {
+        // Skip rendering some frames but still update logic
+        if (frameCount % settings.maxFrameSkip !== 0) {
+          requestAnimationFrame(animate);
+          return;
+        }
+      }
+
+      // Draw the background image (only once per frame)
+      drawBackground();
+
+      // Add a semi-transparent overlay for trail effect (with reduced opacity for better performance)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Update food decay
+      updateFoodDecay();
+
+      // Check if we need to add a new ant
+      addNewAnt();
+
+      // Update spatial grid for optimization
+      if (settings.useSpatialPartitioning) {
+        updateSpatialGrid();
+      }
+
+      // Handle magnifying glass hover
+      if (magnifyingActive) {
+        const antUnderGlass = findAntUnderMagnifyingGlass();
+
+        // Debug info - draw a circle showing detection radius
+        const rect = canvas.getBoundingClientRect();
+        const x = lastMouseX - rect.left;
+        const y = lastMouseY - rect.top;
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.beginPath();
+        ctx.arc(x, y, 30, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // If we're hovering over an ant
+        if (antUnderGlass) {
+          // Draw a highlight around the targeted ant
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(antUnderGlass.ant.x, antUnderGlass.ant.y, 15, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          // If it's the same ant we were already hovering over
+          if (magnifyingHoverAnt === antUnderGlass.ant) {
+            magnifyingHoverTime += deltaTime;
+
+            // Draw a progress circle around the ant
+            const progress = Math.min(1, magnifyingHoverTime / 1000);
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(antUnderGlass.ant.x, antUnderGlass.ant.y, 18,
+                   -Math.PI/2, -Math.PI/2 + progress * Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // If we've been hovering for more than 10 seconds (10000ms)
+            if (magnifyingHoverTime >= 1000) {
+              // Burn the ant!
+              const rect = canvas.getBoundingClientRect();
+              createBurningEffect(lastMouseX, lastMouseY);
+
+              // Remove the ant
+              ants.splice(antUnderGlass.index, 1);
+
+              // Update ant counts
+              if (antUnderGlass.ant.type === 'scout') {
+                scoutCount--;
+              } else {
+                workerCount--;
+              }
+              updateStats();
+
+              // Reset hover
+              magnifyingHoverTime = 0;
+              magnifyingHoverAnt = null;
+            }
+          } else {
+            // We're hovering over a different ant
+            magnifyingHoverAnt = antUnderGlass.ant;
+            magnifyingHoverTime = 0;
+          }
+
+          // Show burning effect under magnifying glass when close to burning
+          if (magnifyingHoverTime > 500) {
+            // Add a red glow to the magnifying glass
+            const burnIntensity = (magnifyingHoverTime - 500) / 500; // 0 to 1
+            const burnSize = 10 + burnIntensity * 20;
+
+            ctx.save();
+            ctx.globalAlpha = burnIntensity * 0.7;
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+
+            const rect = canvas.getBoundingClientRect();
+            const x = lastMouseX - rect.left;
+            const y = lastMouseY - rect.top;
+
+            ctx.beginPath();
+            ctx.arc(x, y, burnSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        } else {
+          // Not hovering over any ant
+          magnifyingHoverAnt = null;
+          magnifyingHoverTime = 0;
+        }
+      }
+
+      // Draw obstacles first (they're behind everything)
+      // Only draw obstacles that are on screen
+      if (settings.cullOffscreenObjects) {
+        obstacles.filter(o => isOnScreen(o)).forEach(o => {
+          drawObstacle(o);
+        });
+      } else {
+        drawObstacles();
+      }
+
+      drawQueen();
+
+      // Only draw food that is on screen
+      if (settings.cullOffscreenObjects) {
+        food.filter(f => isOnScreen(f)).forEach(f => {
+          drawFoodItem(f);
+        });
+      } else {
+        drawFood();
+      }
+
+      // Update and draw ants with optimizations
+      const viewportCenterX = canvas.width / 2;
+      const viewportCenterY = canvas.height / 2;
+
+      // Process ants in batches for better performance
+      const batchSize = 10;
+      const antCount = ants.length;
+
+      for (let i = 0; i < antCount; i += batchSize) {
+        const end = Math.min(i + batchSize, antCount);
+
+        for (let j = i; j < end; j++) {
+          const ant = ants[j];
+
+          // Update all ants
+          ant.update();
+
+          // Only draw ants that are on screen or close to it
+          if (!settings.cullOffscreenObjects || isOnScreen(ant)) {
+            // If optimizing rendering, only draw ants within draw distance
+            if (!settings.optimizeRendering ||
+                Math.hypot(ant.x - viewportCenterX, ant.y - viewportCenterY) <= settings.drawDistance) {
+              ant.draw();
+            }
+          }
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Try to load saved game on startup
+    try {
+      if (!loadGameState()) {
+        // If no saved game, initialize a new game
+        initializeAnts();
+      }
+    } catch (e) {
+      console.error('Error loading saved game:', e);
+      initializeAnts();
+    }
+
+    // Add event listeners for game control buttons
+    document.getElementById('save-button').addEventListener('click', saveGameState);
+    document.getElementById('load-button').addEventListener('click', loadGameState);
+    document.getElementById('reset-button').addEventListener('click', resetGame);
+
+    // Settings panel event listeners
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsButton = document.getElementById('settings-button');
+    const closeSettingsButton = document.getElementById('close-settings');
+
+    // Settings controls
+    const cullCheckbox = document.getElementById('setting-cull');
+    const spatialCheckbox = document.getElementById('setting-spatial');
+    const optimizeCheckbox = document.getElementById('setting-optimize');
+    const frameskipCheckbox = document.getElementById('setting-frameskip');
+    const antCountSlider = document.getElementById('setting-antcount');
+    const antCountValue = document.getElementById('antcount-value');
+
+    // Initialize settings values
+    cullCheckbox.checked = settings.cullOffscreenObjects;
+    spatialCheckbox.checked = settings.useSpatialPartitioning;
+    optimizeCheckbox.checked = settings.optimizeRendering;
+    frameskipCheckbox.checked = settings.useFrameSkipping;
+    antCountSlider.value = 100; // Default max ants
+    antCountValue.textContent = antCountSlider.value;
+
+    // Settings panel toggle
+    settingsButton.addEventListener('click', () => {
+      settingsPanel.style.display = 'block';
+    });
+
+    closeSettingsButton.addEventListener('click', () => {
+      settingsPanel.style.display = 'none';
+    });
+
+    // Settings change handlers
+    cullCheckbox.addEventListener('change', () => {
+      settings.cullOffscreenObjects = cullCheckbox.checked;
+    });
+
+    spatialCheckbox.addEventListener('change', () => {
+      settings.useSpatialPartitioning = spatialCheckbox.checked;
+    });
+
+    optimizeCheckbox.addEventListener('change', () => {
+      settings.optimizeRendering = optimizeCheckbox.checked;
+    });
+
+    frameskipCheckbox.addEventListener('change', () => {
+      settings.useFrameSkipping = frameskipCheckbox.checked;
+    });
+
+    antCountSlider.addEventListener('input', () => {
+      const maxAnts = parseInt(antCountSlider.value);
+      antCountValue.textContent = maxAnts;
+
+      // If we have more ants than the max, remove some
+      if (ants.length > maxAnts) {
+        // Remove excess ants
+        const excessAnts = ants.length - maxAnts;
+        ants.splice(ants.length - excessAnts, excessAnts);
+
+        // Update counts
+        scoutCount = ants.filter(a => a.type === 'scout').length;
+        workerCount = ants.filter(a => a.type === 'worker').length;
+        updateStats();
+      }
+    });
+
+    // Function to reset the game
+    function resetGame() {
+      // Clear all game elements
+      ants.length = 0;
+      food.length = 0;
+      obstacles.length = 0;
+
+      // Reset score and ant counts
+      score = 0;
+      scoutCount = 3;
+      workerCount = 7;
+
+      // Initialize ants again
+      initializeAnts();
+
+      // Update stats display
+      updateStats();
+
+      // Show notification
+      showNotification('Game reset!');
+    }
+
+    animate();
+  </script>
+</body>
+</html>
